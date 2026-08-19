@@ -52,18 +52,39 @@ function readStored(key, fallback) {
   }
 }
 
-// Fusionne des entrées importées dans une liste existante, sans écraser
-// les identifiants déjà utilisés, puis retrie du plus récent au plus ancien.
+// Signature de contenu d'une entrée de journal : deux entrées qui la partagent
+// désignent le même évènement, quels que soient leurs identifiants.
+function entrySignature(entry) {
+  return [entry.ts, entry.source || '', entry.label || '', entry.content || ''].join('\u0000');
+}
+
+// Fusionne des entrées importées dans une liste existante, du plus récent au
+// plus ancien. Une entrée déjà présente — même identifiant, ou même contenu au
+// même horodatage — est ignorée : réimporter un fichier ne duplique rien.
 function mergeEntries(existing, incoming, toFields) {
   const usedIds = new Set(existing.map(e => e.id));
+  const seen = new Set(existing.map(entrySignature));
   const merged = [...existing];
+  let skipped = 0;
+
   incoming.forEach(entry => {
-    const id = (typeof entry.id === 'string' && !usedIds.has(entry.id)) ? entry.id : uid();
-    usedIds.add(id);
-    merged.push({ id, ts: typeof entry.ts === 'number' ? entry.ts : Date.now(), ...toFields(entry) });
+    const candidate = {
+      id: typeof entry.id === 'string' ? entry.id : uid(),
+      ts: typeof entry.ts === 'number' ? entry.ts : Date.now(),
+      ...toFields(entry)
+    };
+    const signature = entrySignature(candidate);
+    if (usedIds.has(candidate.id) || seen.has(signature)) {
+      skipped++;
+      return;
+    }
+    usedIds.add(candidate.id);
+    seen.add(signature);
+    merged.push(candidate);
   });
+
   merged.sort((a, b) => b.ts - a.ts);
-  return merged;
+  return { entries: merged, added: merged.length - existing.length, skipped };
 }
 
 function downloadJson(filename, data) {
