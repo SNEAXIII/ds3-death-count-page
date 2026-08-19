@@ -20,13 +20,24 @@ function indexBy(list, getKey) {
   return index;
 }
 
-// Index d'une liste traduite par chacun de ses libellés, toutes langues confondues :
-// sert à reconnaître les données enregistrées avant l'introduction des identifiants.
+// Clé de comparaison tolérante (casse, accents, ponctuation, espaces) : les
+// journaux d'avant les identifiants contiennent les libellés tels qu'ils
+// étaient affichés, à la virgule et à la majuscule près.
+function labelKey(label) {
+  return String(label)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+}
+
+// Index d'une liste traduite par chacun de ses libellés — toutes langues
+// confondues, plus les noms abandonnés listés dans `aliases`.
 function indexByLabels(list) {
   const index = {};
   list.forEach(item => {
-    Object.keys(item).forEach(key => {
-      if (key !== 'id' && key !== 'bosses') index[item[key]] = item;
+    [item.en, item.fr, ...(item.aliases || [])].forEach(label => {
+      if (label) index[labelKey(label)] = item;
     });
   });
   return index;

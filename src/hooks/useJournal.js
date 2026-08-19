@@ -100,8 +100,8 @@ function useJournal() {
     })));
     setBossKills(prev => {
       const next = { ...prev };
+      // Réimporter son propre export ne doit pas doubler les compteurs.
       Object.entries(migrateBossKills(rawBossKills)).forEach(([id, count]) => {
-        if (typeof count !== 'number' || count < 0) return;
         next[id] = Math.max(next[id] || 0, count);
       });
       return next;

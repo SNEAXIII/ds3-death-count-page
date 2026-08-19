@@ -24,6 +24,10 @@ const NOTE_LABELS = [
   { id: 'idea', en: 'Idea / strategy', fr: 'Idée / stratégie' }
 ];
 
+// `aliases` : noms portés par une entrée avant cette correction. Ils gardent
+// les anciens journaux rattachés au bon boss (la comparaison ignore déjà la
+// casse, les accents et la ponctuation, seuls les vrais changements de nom
+// sont listés).
 const BOSS_GROUPS = [
   {
     id: 'base',
@@ -31,25 +35,25 @@ const BOSS_GROUPS = [
     fr: 'Jeu de base',
     bosses: [
       { id: 'iudex-gundyr', en: 'Iudex Gundyr', fr: 'Iudex Gundyr' },
-      { id: 'vordt', en: 'Vordt of the Boreal Valley', fr: 'Vordt de la Vallée Boréale' },
-      { id: 'greatwood', en: 'Curse-Rotted Greatwood', fr: 'Le Grand Bois putréfié' },
-      { id: 'crystal-sage', en: 'Crystal Sage', fr: 'Sage de Cristal' },
+      { id: 'vordt', en: 'Vordt of the Boreal Valley', fr: 'Vordt du Val Boréal', aliases: ['Vordt de la Vallée Boréale'] },
+      { id: 'greatwood', en: 'Curse-Rotted Greatwood', fr: 'Grand arbre pourri par la malédiction', aliases: ['Le Grand Bois putréfié'] },
+      { id: 'crystal-sage', en: 'Crystal Sage', fr: 'Sage de cristal' },
       { id: 'deacons', en: 'Deacons of the Deep', fr: 'Diacres des Profondeurs' },
       { id: 'abyss-watchers', en: 'Abyss Watchers', fr: "Guetteurs de l'Abîme" },
-      { id: 'wolnir', en: 'High Lord Wolnir', fr: 'Wolnir le Grand Immonde' },
-      { id: 'old-demon-king', en: 'Old Demon King', fr: 'Vieux Roi Démon' },
+      { id: 'wolnir', en: 'High Lord Wolnir', fr: 'Grand seigneur Wolnir', aliases: ['Wolnir le Grand Immonde'] },
+      { id: 'old-demon-king', en: 'Old Demon King', fr: 'Vieux roi démon' },
       { id: 'pontiff', en: 'Pontiff Sulyvahn', fr: 'Pontife Sulyvahn' },
       { id: 'yhorm', en: 'Yhorm the Giant', fr: 'Yhorm le Géant' },
-      { id: 'aldrich', en: 'Aldrich, Devourer of Gods', fr: 'Aldrich Dévoreur de Dieux' },
-      { id: 'dancer', en: 'Dancer of the Boreal Valley', fr: 'Danseuse de la Vallée Boréale' },
-      { id: 'oceiros', en: 'Oceiros, the Consumed King', fr: 'Oceiros le Roi Consumé' },
+      { id: 'aldrich', en: 'Aldrich, Devourer of Gods', fr: 'Aldrich, dévoreur de dieux' },
+      { id: 'dancer', en: 'Dancer of the Boreal Valley', fr: 'Danseuse du Val Boréal', aliases: ['Danseuse de la Vallée Boréale'] },
+      { id: 'oceiros', en: 'Oceiros, the Consumed King', fr: 'Oceiros, le roi consumé' },
       { id: 'champion-gundyr', en: 'Champion Gundyr', fr: 'Champion Gundyr' },
-      { id: 'ancient-wyvern', en: 'Ancient Wyvern', fr: 'Ancienne Vouivre' },
-      { id: 'dragonslayer-armour', en: 'Dragonslayer Armour', fr: 'Armure Pourfendeuse de Dragons' },
-      { id: 'lorian-lothric', en: 'Lorian & Lothric', fr: 'Lorian & Lothric' },
-      { id: 'twin-princes', en: 'Twin Princes', fr: 'Princes Jumeaux' },
+      { id: 'ancient-wyvern', en: 'Ancient Wyvern', fr: 'Vouivre ancestrale', aliases: ['Ancienne Vouivre'] },
+      { id: 'dragonslayer-armour', en: 'Dragonslayer Armour', fr: 'Armure du tueur de dragons', aliases: ['Armure Pourfendeuse de Dragons'] },
+      // Lorian et Lothric sont les deux phases d'un même combat : une seule entrée.
+      { id: 'twin-princes', en: 'Twin Princes', fr: 'Princes jumeaux', aliases: ['Lorian & Lothric'] },
       { id: 'soul-of-cinder', en: 'Soul of Cinder', fr: 'Âme de Cendre' },
-      { id: 'nameless-king', en: 'Nameless King', fr: 'Roi sans Nom' }
+      { id: 'nameless-king', en: 'Nameless King', fr: 'Roi sans nom' }
     ]
   },
   {
@@ -57,8 +61,8 @@ const BOSS_GROUPS = [
     en: 'Ashes of Ariandel',
     fr: "Cendres d'Ariandel",
     bosses: [
-      { id: 'friede', en: 'Sister Friede & Father Ariandel', fr: 'Sœur Friede & Père Ariandel' },
-      { id: 'gravetender', en: "Champion's Gravetender & Gravetender Greatwolf", fr: 'Gardienne du Champion & Grand Loup Gardien' }
+      { id: 'gravetender', en: "Champion's Gravetender & Gravetender Greatwolf", fr: 'Gardienne des tombes du Champion et grand loup gardien', aliases: ['Gardienne du Champion & Grand Loup Gardien'] },
+      { id: 'friede', en: 'Sister Friede', fr: 'Sœur Friede', aliases: ['Sister Friede & Father Ariandel', 'Sœur Friede & Père Ariandel'] }
     ]
   },
   {
@@ -66,10 +70,10 @@ const BOSS_GROUPS = [
     en: 'The Ringed City',
     fr: 'La Cité Annelée',
     bosses: [
-      { id: 'halflight', en: 'Halflight, Spear of the Church', fr: "Demi-Lumière, Lance de l'Église" },
-      { id: 'gael', en: 'Slave Knight Gael', fr: 'Chevalier Esclave Gael' },
-      { id: 'midir', en: 'Darkeater Midir', fr: 'Darkeater Midir' },
-      { id: 'demon-prince', en: 'Demon Prince', fr: 'Prince Démon' }
+      { id: 'demon-prince', en: 'Demon Prince', fr: 'Prince démon' },
+      { id: 'halflight', en: 'Halflight, Spear of the Church', fr: "Demi-Lumière, lance de l'Église" },
+      { id: 'midir', en: 'Darkeater Midir', fr: "Midir le dévoreur d'obscurité" },
+      { id: 'gael', en: 'Slave Knight Gael', fr: 'Chevalier esclave Gael' }
     ]
   }
 ];
