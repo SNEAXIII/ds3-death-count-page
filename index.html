@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dark Souls III — Journal des trépas</title>
+<title>Dark Souls III — Death journal</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
@@ -26,11 +26,14 @@
   (voir README.md), pas ouverte en file://.
 -->
 
-<!-- socle : preset Babel, constantes, utilitaires, hooks -->
+<!-- socle : preset Babel, helpers, données, i18n, hooks -->
 <script src="src/babel-preset.js"></script>
-<script src="src/constants.js"></script>
 <script src="src/utils.js"></script>
+<script src="src/constants.js"></script>
 <script src="src/react-globals.js"></script>
+<script src="src/i18n.js"></script>
+<script src="src/journal-entries.js"></script>
+<script src="src/hooks/useLanguage.js"></script>
 <script src="src/hooks/useFlash.js"></script>
 <script src="src/hooks/useJournal.js"></script>
 
@@ -38,6 +41,7 @@
 <script type="text/babel" data-presets="react-classic" src="src/components/SectionLabel.jsx"></script>
 <script type="text/babel" data-presets="react-classic" src="src/components/ThemedSelect.jsx"></script>
 <script type="text/babel" data-presets="react-classic" src="src/components/AutocompleteInput.jsx"></script>
+<script type="text/babel" data-presets="react-classic" src="src/components/LanguageToggle.jsx"></script>
 
 <!-- sections de la page -->
 <script type="text/babel" data-presets="react-classic" src="src/components/DeathCounter.jsx"></script>

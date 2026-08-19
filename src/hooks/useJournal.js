@@ -8,9 +8,9 @@ function useJournal() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setDeaths(readStored(STORAGE_KEY, []));
-    setNotes(readStored(NOTES_KEY, []));
-    setBossKills(readStored(BOSS_KILLS_KEY, {}));
+    setDeaths(readStored(STORAGE_KEY, []).map(d => ({ ...d, source: migrateSource(d.source) })));
+    setNotes(readStored(NOTES_KEY, []).map(n => ({ ...n, label: migrateNoteLabel(n.label) })));
+    setBossKills(migrateBossKills(readStored(BOSS_KILLS_KEY, {})));
     setLoaded(true);
   }, []);
 
@@ -28,23 +28,14 @@ function useJournal() {
   const bossDeathCounts = useMemo(() => {
     const counts = {};
     deaths.forEach(d => {
-      if (d.source.startsWith(BOSS_PREFIX)) {
-        const name = d.source.slice(BOSS_PREFIX.length);
-        counts[name] = (counts[name] || 0) + 1;
-      }
+      const { kind, value } = parseSource(d.source);
+      if (kind === 'boss') counts[value] = (counts[value] || 0) + 1;
     });
     return counts;
   }, [deaths]);
 
-  const knownCreatures = useMemo(() => Array.from(new Set(
-    deaths.filter(d => d.source.startsWith(CREATURE_PREFIX)).map(d => d.source.slice(CREATURE_PREFIX.length))
-  )).sort((a, b) => a.localeCompare(b, 'fr')), [deaths]);
-
-  const knownCustomCauses = useMemo(() => Array.from(new Set(
-    deaths.map(d => d.source).filter(s =>
-      !QUICK_CAUSES.includes(s) && !s.startsWith(BOSS_PREFIX) && !s.startsWith(CREATURE_PREFIX)
-    )
-  )).sort((a, b) => a.localeCompare(b, 'fr')), [deaths]);
+  const knownCreatures = useMemo(() => sortedUniqueValues(deaths, 'creature'), [deaths]);
+  const knownCustomCauses = useMemo(() => sortedUniqueValues(deaths, 'custom'), [deaths]);
 
   // ---------- mutations ----------
   function addDeath(source) {
@@ -59,8 +50,8 @@ function useJournal() {
     setDeaths([]);
   }
 
-  function adjustBossKill(name, dir) {
-    setBossKills(prev => ({ ...prev, [name]: Math.max(0, (prev[name] || 0) + dir) }));
+  function adjustBossKill(id, dir) {
+    setBossKills(prev => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) + dir) }));
   }
 
   function addNote(label, content) {
@@ -85,7 +76,8 @@ function useJournal() {
     return { deaths: deaths.length, notes: notes.length };
   }
 
-  // Fusionne un fichier importé avec le journal courant.
+  // Fusionne un fichier importé avec le journal courant, en reprenant au
+  // passage les fichiers exportés avant l'i18n.
   // Lève une erreur si le contenu n'est reconnaissable dans aucun des trois formats.
   function importJournal(parsed) {
     const rawDeaths = Array.isArray(parsed) ? parsed
@@ -101,16 +93,16 @@ function useJournal() {
     const importedDeaths = rawDeaths.filter(e => e && typeof e.source === 'string');
     const importedNotes = rawNotes.filter(e => e && typeof e.content === 'string');
 
-    setDeaths(prev => mergeEntries(prev, importedDeaths, e => ({ source: e.source })));
+    setDeaths(prev => mergeEntries(prev, importedDeaths, e => ({ source: migrateSource(e.source) })));
     setNotes(prev => mergeEntries(prev, importedNotes, e => ({
-      label: (typeof e.label === 'string' && e.label) ? e.label : 'Note',
+      label: migrateNoteLabel((typeof e.label === 'string' && e.label) ? e.label : STRINGS[DEFAULT_LANG].defaultNoteLabel),
       content: e.content
     })));
     setBossKills(prev => {
       const next = { ...prev };
-      Object.entries(rawBossKills).forEach(([name, count]) => {
+      Object.entries(migrateBossKills(rawBossKills)).forEach(([id, count]) => {
         if (typeof count !== 'number' || count < 0) return;
-        next[name] = Math.max(next[name] || 0, count);
+        next[id] = Math.max(next[id] || 0, count);
       });
       return next;
     });
@@ -125,4 +117,13 @@ function useJournal() {
     addNote, updateNote, removeNote,
     exportJournal, importJournal
   };
+}
+
+// Valeurs distinctes d'un type de source, triées pour l'autocomplétion.
+function sortedUniqueValues(deaths, kind) {
+  const values = deaths
+    .map(d => parseSource(d.source))
+    .filter(s => s.kind === kind)
+    .map(s => s.value);
+  return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
 }

@@ -1,10 +1,11 @@
-// Message plein écran éphémère ("VOUS ÊTES MORT" / "BOSS VAINCU").
-// `key` change à chaque appel pour rejouer l'animation même sur un message identique.
+// Message plein écran éphémère ('death' ou 'victory'). Seul le type est
+// mémorisé, le texte est traduit au rendu ; `key` change à chaque appel pour
+// rejouer l'animation même sur un message identique.
 function useFlash() {
   const [flash, setFlash] = useState(null);
 
-  function showFlash(msg, kind) {
-    setFlash({ msg, kind, key: Date.now() });
+  function showFlash(kind) {
+    setFlash({ kind, key: Date.now() });
   }
 
   return { flash, showFlash };
