@@ -1,8 +1,13 @@
 // Les trois façons de consigner une mort : cause rapide, boss, créature ou saisie libre.
-function DeathForm({ causeCounts, knownCreatures, knownCustomCauses, onRecord }) {
+function DeathForm({ game, causeCounts, knownCreatures, knownCustomCauses, onRecord }) {
   const { lang, t } = useI18n();
 
-  const [bossId, setBossId] = useState(ALL_BOSSES[0].id);
+  const [bossId, setBossId] = useState(bossesOf(game)[0].id);
+
+  // Changer le jeu du profil laisse une sélection qui n'existe plus dans le
+  // nouveau roster : on retombe alors sur son premier boss.
+  const roster = bossesOf(game);
+  const selectedBossId = roster.some(boss => boss.id === bossId) ? bossId : roster[0].id;
   const [creatureVal, setCreatureVal] = useState('');
   const [customVal, setCustomVal] = useState('');
 
@@ -52,14 +57,14 @@ function DeathForm({ causeCounts, knownCreatures, knownCustomCauses, onRecord })
       </div>
 
       <div className="flex gap-2 mb-8">
-        <ThemedSelect value={bossId} onChange={(e) => setBossId(e.target.value)}>
-          {BOSS_GROUPS.map(group => (
+        <ThemedSelect value={selectedBossId} onChange={(e) => setBossId(e.target.value)}>
+          {game.groups.map(group => (
             <optgroup key={group.id} label={labelOf(group, lang)}>
               {group.bosses.map(boss => <option key={boss.id} value={boss.id}>{labelOf(boss, lang)}</option>)}
             </optgroup>
           ))}
         </ThemedSelect>
-        <button onClick={() => onRecord(bossSource(bossId))} className={actionButtonClass}>{t('bossButton')}</button>
+        <button onClick={() => onRecord(bossSource(selectedBossId))} className={actionButtonClass}>{t('bossButton')}</button>
       </div>
 
       <div className="flex gap-2 mb-8">

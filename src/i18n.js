@@ -20,6 +20,7 @@ const STRINGS = {
 
     profileSection: 'Profile',
     profileNamePlaceholder: 'Profile name',
+    gameLabel: 'Game',
     newProfile: 'New',
     renameProfile: 'Rename',
     deleteProfile: 'Delete',
@@ -87,6 +88,7 @@ const STRINGS = {
 
     profileSection: 'Profil',
     profileNamePlaceholder: 'Nom du profil',
+    gameLabel: 'Jeu',
     newProfile: 'Nouveau',
     renameProfile: 'Renommer',
     deleteProfile: 'Supprimer',

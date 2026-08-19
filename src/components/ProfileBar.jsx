@@ -2,7 +2,7 @@ const DELETE_ARM_TIMEOUT_MS = 4000;
 
 // Sélection du profil courant, création, renommage et suppression.
 // Chaque profil est une partie : il a son propre journal.
-function ProfileBar({ profiles, active, onSelect, onCreate, onRename, onDelete }) {
+function ProfileBar({ profiles, active, onSelect, onCreate, onRename, onSetGame, onDelete }) {
   const { t } = useI18n();
 
   const [renaming, setRenaming] = useState(false);
@@ -71,7 +71,7 @@ function ProfileBar({ profiles, active, onSelect, onCreate, onRename, onDelete }
         </div>
       ) : (
         <div className="flex gap-2">
-          <ThemedSelect value={active.id} onChange={(e) => onSelect(e.target.value)}>
+          <ThemedSelect value={active.id} onChange={(e) => onSelect(e.target.value)} ariaLabel={t('profileSection')}>
             {profiles.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </ThemedSelect>
           <button onClick={() => onCreate()} className={buttonClass}>{t('newProfile')}</button>
@@ -91,6 +91,12 @@ function ProfileBar({ profiles, active, onSelect, onCreate, onRename, onDelete }
       )}
 
       {deleteArmed && <div className="text-[12.5px] italic text-[#746c5c] mt-2">{t('deleteProfileHint')}</div>}
+
+      <div className="flex gap-2 mt-2">
+        <ThemedSelect value={gameOf(active).id} onChange={(e) => onSetGame(active.id, e.target.value)} ariaLabel={t('gameLabel')}>
+          {GAMES.map(g => <option key={g.id} value={g.id}>{g.label}</option>)}
+        </ThemedSelect>
+      </div>
       </div>
     </>
   );

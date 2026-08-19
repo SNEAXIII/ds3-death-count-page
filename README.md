@@ -1,8 +1,9 @@
 # Dark Souls III — Journal des trépas
 
-Compteur de morts, suivi des boss et notes de voyage pour Dark Souls III.
-Autant de **profils** que de parties en cours — un profil par personnage,
-chacun avec son propre journal. Interface bilingue **anglais / français**, en
+Compteur de morts, suivi des boss et notes de voyage pour **Dark Souls,
+Dark Souls II et Dark Souls III**, DLC compris. Autant de **profils** que de
+parties en cours — un profil par personnage, chacun avec son jeu et son propre
+journal. Interface bilingue **anglais / français**, en
 anglais par défaut, avec un sélecteur EN/FR sous le titre. Tout est stocké en
 local dans le navigateur (`localStorage`), avec export / import JSON pour
 changer de machine.
@@ -28,8 +29,14 @@ python3 -m http.server 8000
 
 ## Profils
 
-Chaque profil correspond à une partie, donc à un personnage : morts, notes et
-kills de boss lui sont propres. Les trois clés de journal sont suffixées par
+Chaque profil correspond à une partie, donc à un personnage : son jeu, ses
+morts, ses notes et ses kills de boss lui sont propres. Le sélecteur de jeu
+sous la liste des profils change le roster affiché — 26 boss pour Dark Souls
+(Artorias of the Abyss compris), 40 pour Dark Souls II (les trois Couronnes),
+25 pour Dark Souls III (Ariandel et la Cité Annelée). Changer le jeu d'un
+profil ne perd rien : les kills des autres jeux restent en mémoire et
+réapparaissent si le profil y revient. Un profil neuf reprend le jeu du profil
+courant. Les trois clés de journal sont suffixées par
 l'identifiant du profil (`ds3-deaths-log:<id>`, …), la liste des profils et le
 profil courant vivant dans `ds3-profiles` et `ds3-active-profile`. Le journal
 unique d'avant les profils devient automatiquement le premier profil.
@@ -65,7 +72,8 @@ existants à la bonne entrée.
 index.html                  page + ordre de chargement des scripts
 assets/styles.css           polices, scrollbar, animation du flash
 src/utils.js                helpers génériques (ids, dates, index, fusion, export fichier)
-src/constants.js            clés localStorage, boss, causes, labels de notes (id + libellés)
+src/constants.js            clés localStorage, causes, labels de notes (id + libellés)
+src/bosses.js               rosters par jeu, DLC compris, et index par identifiant
 src/react-globals.js        déstructuration unique des hooks React
 src/i18n.js                 textes d'interface EN/FR, contexte de langue
 src/journal-entries.js      format des sources de mort, affichage et reprise des anciens journaux
