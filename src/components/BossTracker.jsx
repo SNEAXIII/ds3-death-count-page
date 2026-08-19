@@ -39,7 +39,7 @@ function BossTracker({ bossKills, bossDeathCounts, onAdjust }) {
     <>
       <SectionLabel>{t('bossSection')}</SectionLabel>
 
-      <div className="flex gap-8 justify-center border-t border-b border-[#332c20] py-4 mb-4">
+      <div className="flex gap-8 justify-center border-b border-[#332c20] pb-4 mb-4">
         <div className="text-center">
           <span className="font-display font-bold text-[32px] text-[#d4af5a]">{defeatedCount}</span>
           <span className="text-[#746c5c] text-[20px] mx-1">/</span>
