@@ -36,8 +36,12 @@ unique d'avant les profils devient automatiquement le premier profil.
 
 L'export et l'import portent sur le **profil courant** : le fichier reprend son
 nom, à titre indicatif, et reste importable dans n'importe quel autre profil.
-Le dernier profil n'est pas supprimable — pour repartir de zéro sans perdre le
-personnage, « Effacer le journal » est là pour ça.
+Il emporte les morts, les notes **et** les kills de boss, et réimporter un
+fichier déjà importé ne duplique rien — une entrée déjà présente est ignorée,
+les compteurs de kills se fusionnent par maximum.
+
+« Effacer le journal » efface tout le journal du profil : morts, notes et kills
+de boss. Le dernier profil, lui, n'est pas supprimable.
 
 ## Langues et données stockées
 

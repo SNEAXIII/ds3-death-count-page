@@ -66,13 +66,15 @@ const STRINGS = {
 
     exportButton: 'Export (JSON)',
     importButton: 'Import (JSON)',
-    exportDone: (d, n) => `${d} death(s) and ${n} note(s) exported.`,
-    importDone: (d, n) => `${d} death(s) and ${n} note(s) imported and merged.`,
+    exportDone: (d, n, b) => `${d} death(s), ${n} note(s) and ${b} boss(es) exported.`,
+    importDone: (d, n, b, skipped) =>
+      `${d} death(s), ${n} note(s) and ${b} boss(es) imported.` +
+      (skipped ? ` ${skipped} duplicate(s) already present, ignored.` : ''),
     importFailed: 'Import failed: invalid JSON file.',
 
     resetIdle: 'Clear the journal',
     resetArmed: 'Confirm clearing',
-    resetHint: 'Click again to confirm (irreversible)',
+    resetHint: 'Click again to confirm — deaths, notes and boss kills of this profile are lost.',
 
     flashDeath: 'YOU DIED',
     flashVictory: 'VICTORY ACHIEVED'
@@ -131,13 +133,15 @@ const STRINGS = {
 
     exportButton: 'Exporter (JSON)',
     importButton: 'Importer (JSON)',
-    exportDone: (d, n) => `${d} mort(s) et ${n} note(s) exportées.`,
-    importDone: (d, n) => `${d} mort(s) et ${n} note(s) importées et fusionnées.`,
+    exportDone: (d, n, b) => `${d} mort(s), ${n} note(s) et ${b} boss exportés.`,
+    importDone: (d, n, b, skipped) =>
+      `${d} mort(s), ${n} note(s) et ${b} boss importés.` +
+      (skipped ? ` ${skipped} doublon(s) déjà présent(s), ignoré(s).` : ''),
     importFailed: "Échec de l'import : fichier JSON invalide.",
 
     resetIdle: 'Effacer le journal',
     resetArmed: "Confirmer l'effacement",
-    resetHint: 'Clique à nouveau pour confirmer (irréversible)',
+    resetHint: 'Clique à nouveau pour confirmer — morts, notes et kills de boss de ce profil seront perdus.',
 
     flashDeath: 'VOUS ÊTES MORT',
     flashVictory: 'BOSS VAINCU'

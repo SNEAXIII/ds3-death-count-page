@@ -20,8 +20,10 @@ function DeathForm({ causeCounts, knownCreatures, knownCustomCauses, onRecord })
     setCustomVal('');
   }
 
+  // Largeur commune : sans elle, chaque bouton se cale sur son libellé et la
+  // colonne de droite part en escalier.
   const actionButtonClass =
-    "bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase px-5 hover:bg-[#d4302f]";
+    "w-[150px] shrink-0 bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase px-3 hover:bg-[#d4302f]";
 
   return (
     <>
@@ -30,16 +32,20 @@ function DeathForm({ causeCounts, knownCreatures, knownCustomCauses, onRecord })
       <div className="grid grid-cols-3 gap-2.5 mb-3.5">
         {QUICK_CAUSES.map(cause => {
           const n = causeCounts[causeSource(cause.id)] || 0;
+          // Le compteur est en surimpression : réservé dans le flux, il
+          // décalerait le libellé vers le haut sur les causes sans mort.
           return (
             <button
               key={cause.id}
               onClick={() => onRecord(causeSource(cause.id))}
-              className="flex flex-col items-center gap-0.5 bg-[#16130f] border border-[#332c20] text-[#b8ae98] font-body text-[17px] py-3.5 px-2 hover:border-[#9c1c1c] hover:bg-[#1d1911] active:scale-[0.97] transition"
+              className="relative flex items-center justify-center min-h-[76px] bg-[#16130f] border border-[#332c20] text-[#b8ae98] font-body text-[17px] px-2 hover:border-[#9c1c1c] hover:bg-[#1d1911] active:scale-[0.97] transition"
             >
               <span>{labelOf(cause, lang)}</span>
-              <span className="font-display text-[11px] text-[#d4302f] opacity-80 min-h-[13px]">
-                {n > 0 ? t('deathCount', n) : ''}
-              </span>
+              {n > 0 && (
+                <span className="absolute bottom-2 left-0 right-0 font-display text-[11px] text-[#d4302f] opacity-80">
+                  {t('deathCount', n)}
+                </span>
+              )}
             </button>
           );
         })}

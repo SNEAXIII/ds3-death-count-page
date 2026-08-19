@@ -66,7 +66,7 @@ function App() {
           <JournalActions
             onExport={journal.exportJournal}
             onImport={journal.importJournal}
-            onReset={journal.clearDeaths}
+            onReset={journal.clearJournal}
           />
         </div>
 

@@ -27,8 +27,8 @@ function JournalActions({ onExport, onImport, onReset }) {
   }
 
   function handleExport() {
-    const { deaths, notes } = onExport();
-    showStatus('exportDone', 'ok', [deaths, notes]);
+    const { deaths, notes, bosses } = onExport();
+    showStatus('exportDone', 'ok', [deaths, notes, bosses]);
   }
 
   function handleImportFile(e) {
@@ -38,8 +38,8 @@ function JournalActions({ onExport, onImport, onReset }) {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const { deaths, notes } = onImport(JSON.parse(reader.result));
-        showStatus('importDone', 'ok', [deaths, notes]);
+        const { deaths, notes, bosses, skipped } = onImport(JSON.parse(reader.result));
+        showStatus('importDone', 'ok', [deaths, notes, bosses, skipped]);
       } catch (err) {
         showStatus('importFailed', 'err');
       } finally {

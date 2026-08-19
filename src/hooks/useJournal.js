@@ -51,8 +51,11 @@ function useJournal(profile) {
     setDeaths(prev => prev.filter(d => d.id !== id));
   }
 
-  function clearDeaths() {
+  // Efface tout le journal du profil : morts, notes et kills de boss.
+  function clearJournal() {
     setDeaths([]);
+    setNotes([]);
+    setBossKills({});
   }
 
   function adjustBossKill(id, dir) {
@@ -82,7 +85,7 @@ function useJournal(profile) {
     downloadJson(`ds3-journal-${profileSlug(profile.name)}-${stamp}.json`, {
       profile: profile.name, deaths, notes, bossKills
     });
-    return { deaths: deaths.length, notes: notes.length };
+    return { deaths: deaths.length, notes: notes.length, bosses: countBosses(bossKills) };
   }
 
   // Fusionne un fichier importé avec le journal courant, en reprenant au
@@ -102,27 +105,40 @@ function useJournal(profile) {
     const importedDeaths = rawDeaths.filter(e => e && typeof e.source === 'string');
     const importedNotes = rawNotes.filter(e => e && typeof e.content === 'string');
 
-    setDeaths(prev => mergeEntries(prev, importedDeaths, e => ({ source: migrateSource(e.source) })));
-    setNotes(prev => mergeEntries(prev, importedNotes, e => ({
+    // Fusions calculées à partir de l'état courant plutôt que dans les
+    // updaters : le décompte rapporté à l'utilisateur doit rester exact.
+    const mergedDeaths = mergeEntries(deaths, importedDeaths, e => ({ source: migrateSource(e.source) }));
+    const mergedNotes = mergeEntries(notes, importedNotes, e => ({
       label: migrateNoteLabel((typeof e.label === 'string' && e.label) ? e.label : STRINGS[DEFAULT_LANG].defaultNoteLabel),
       content: e.content
-    })));
-    setBossKills(prev => {
-      const next = { ...prev };
-      // Réimporter son propre export ne doit pas doubler les compteurs.
-      Object.entries(migrateBossKills(rawBossKills)).forEach(([id, count]) => {
-        next[id] = Math.max(next[id] || 0, count);
-      });
-      return next;
+    }));
+
+    // Réimporter son propre export ne doit pas doubler les compteurs : on
+    // retient le plus élevé des deux, jamais leur somme.
+    const mergedKills = { ...bossKills };
+    let importedBosses = 0;
+    Object.entries(migrateBossKills(rawBossKills)).forEach(([id, count]) => {
+      if (count <= (mergedKills[id] || 0)) return;
+      mergedKills[id] = count;
+      importedBosses++;
     });
 
-    return { deaths: importedDeaths.length, notes: importedNotes.length };
+    setDeaths(mergedDeaths.entries);
+    setNotes(mergedNotes.entries);
+    setBossKills(mergedKills);
+
+    return {
+      deaths: mergedDeaths.added,
+      notes: mergedNotes.added,
+      bosses: importedBosses,
+      skipped: mergedDeaths.skipped + mergedNotes.skipped
+    };
   }
 
   return {
     deaths, notes, bossKills,
     causeCounts, bossDeathCounts, knownCreatures, knownCustomCauses,
-    addDeath, removeDeath, clearDeaths, adjustBossKill,
+    addDeath, removeDeath, clearJournal, adjustBossKill,
     addNote, updateNote, removeNote,
     exportJournal, importJournal
   };
@@ -135,4 +151,9 @@ function sortedUniqueValues(deaths, kind) {
     .filter(s => s.kind === kind)
     .map(s => s.value);
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b));
+}
+
+// Nombre de boss ayant au moins un kill enregistré.
+function countBosses(bossKills) {
+  return Object.values(bossKills).filter(count => count > 0).length;
 }
