@@ -4,10 +4,19 @@ Compteur de morts, suivi des boss et notes de voyage pour Dark Souls III.
 Tout est stocké en local dans le navigateur (`localStorage`), avec export /
 import JSON pour changer de machine.
 
+## Déploiement
+
+Le site est publié sur GitHub Pages depuis la branche par défaut : aucune
+étape de build, Pages sert le dossier tel quel. Les chemins vers `assets/`
+et `src/` sont relatifs, ils fonctionnent donc sous le sous-dossier
+`/ds3-death-count-page/`. Le fichier `.nojekyll` désactive le passage par
+Jekyll, inutile ici.
+
 ## Lancer en local
 
 Les sources sont chargées par requête HTTP : ouvrir `index.html` en `file://`
-ne fonctionne pas. Servir le dossier suffit :
+ne fonctionne pas (Pages, lui, sert bien en HTTP). En local, servir le dossier
+suffit :
 
 ```sh
 python3 -m http.server 8000
