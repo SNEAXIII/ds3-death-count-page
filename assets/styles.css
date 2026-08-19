@@ -1,0 +1,14 @@
+html, body { margin: 0; padding: 0; background: #0b0a08; }
+
+.font-display { font-family: 'Cinzel', serif; }
+.font-body { font-family: 'EB Garamond', Georgia, serif; }
+
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: #332c20; }
+
+@keyframes ds3-die {
+  0% { opacity: 0; letter-spacing: 0.5em; }
+  18% { opacity: 1; letter-spacing: 0.15em; }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
