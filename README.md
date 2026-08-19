@@ -35,7 +35,10 @@ retraduit l'historique déjà consigné.
 
 Les journaux créés avant l'i18n (noms de boss et causes en français) sont
 convertis à la lecture, aussi bien depuis `localStorage` que depuis un
-fichier importé : rien à refaire côté joueur.
+fichier importé : rien à refaire côté joueur. La reconnaissance des anciens
+libellés ignore la casse, les accents et la ponctuation ; un boss renommé
+depuis garde ses anciens noms dans `aliases`, ce qui rattache les journaux
+existants à la bonne entrée.
 
 ## Structure
 

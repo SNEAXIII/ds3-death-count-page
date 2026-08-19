@@ -43,12 +43,12 @@ function migrateSource(source) {
   const { kind } = parseSource(source);
   if (kind !== 'custom') return source;
 
-  const cause = CAUSE_BY_LABEL[source];
+  const cause = CAUSE_BY_LABEL[labelKey(source)];
   if (cause) return causeSource(cause.id);
 
   const bossName = stripPrefix(source, LEGACY_BOSS_PREFIXES);
   if (bossName !== null) {
-    const boss = BOSS_BY_LABEL[bossName];
+    const boss = BOSS_BY_LABEL[labelKey(bossName)];
     return bossSource(boss ? boss.id : bossName);
   }
 
@@ -60,16 +60,19 @@ function migrateSource(source) {
 
 function migrateNoteLabel(label) {
   if (NOTE_LABEL_BY_ID[label]) return label;
-  const preset = NOTE_LABEL_BY_LABEL[label];
+  const preset = NOTE_LABEL_BY_LABEL[labelKey(label)];
   return preset ? preset.id : label;
 }
 
 function migrateBossKills(bossKills) {
   const migrated = {};
   Object.entries(bossKills).forEach(([key, count]) => {
-    const boss = BOSS_BY_ID[key] || BOSS_BY_LABEL[key];
+    if (typeof count !== 'number' || count < 0) return;
+    const boss = BOSS_BY_ID[key] || BOSS_BY_LABEL[labelKey(key)];
     const id = boss ? boss.id : key;
-    migrated[id] = Math.max(migrated[id] || 0, count);
+    // Deux clés peuvent désigner le même boss — « Lorian & Lothric » et
+    // « Princes Jumeaux » comptaient le même combat : leurs kills s'additionnent.
+    migrated[id] = (migrated[id] || 0) + count;
   });
   return migrated;
 }
