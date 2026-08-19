@@ -1,6 +1,7 @@
 function App() {
   const i18n = useLanguage();
-  const journal = useJournal();
+  const profiles = useProfiles(n => i18n.t('defaultProfileName', n));
+  const journal = useJournal(profiles.active);
   const { flash, showFlash } = useFlash();
 
   function recordDeath(source) {
@@ -27,6 +28,15 @@ function App() {
         </div>
 
         <div className="max-w-[900px] mx-auto">
+          <ProfileBar
+            profiles={profiles.profiles}
+            active={profiles.active}
+            onSelect={profiles.selectProfile}
+            onCreate={profiles.createProfile}
+            onRename={profiles.renameProfile}
+            onDelete={profiles.deleteProfile}
+          />
+
           <DeathCounter count={journal.deaths.length} />
 
           <BossTracker

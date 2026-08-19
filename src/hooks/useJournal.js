@@ -1,22 +1,27 @@
-// Source de vérité du journal : morts, notes, kills de boss.
-// Charge depuis localStorage au montage, y réécrit à chaque changement,
-// et expose les mutations ainsi que les statistiques dérivées.
-function useJournal() {
+// Source de vérité du journal d'un profil : morts, notes, kills de boss.
+// Recharge à chaque changement de profil, réécrit dans les clés de ce profil à
+// chaque changement, et expose les mutations ainsi que les statistiques dérivées.
+function useJournal(profile) {
+  const profileId = profile.id;
+
   const [deaths, setDeaths] = useState([]);
   const [notes, setNotes] = useState([]);
   const [bossKills, setBossKills] = useState({});
-  const [loaded, setLoaded] = useState(false);
+  const [loadedProfile, setLoadedProfile] = useState(null);
 
   useEffect(() => {
-    setDeaths(readStored(STORAGE_KEY, []).map(d => ({ ...d, source: migrateSource(d.source) })));
-    setNotes(readStored(NOTES_KEY, []).map(n => ({ ...n, label: migrateNoteLabel(n.label) })));
-    setBossKills(migrateBossKills(readStored(BOSS_KILLS_KEY, {})));
-    setLoaded(true);
-  }, []);
+    setDeaths(readStored(profileKey(STORAGE_KEY, profileId), []).map(d => ({ ...d, source: migrateSource(d.source) })));
+    setNotes(readStored(profileKey(NOTES_KEY, profileId), []).map(n => ({ ...n, label: migrateNoteLabel(n.label) })));
+    setBossKills(migrateBossKills(readStored(profileKey(BOSS_KILLS_KEY, profileId), {})));
+    setLoadedProfile(profileId);
+  }, [profileId]);
 
-  useEffect(() => { if (loaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(deaths)); }, [deaths, loaded]);
-  useEffect(() => { if (loaded) localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); }, [notes, loaded]);
-  useEffect(() => { if (loaded) localStorage.setItem(BOSS_KILLS_KEY, JSON.stringify(bossKills)); }, [bossKills, loaded]);
+  // Le garde évite d'écrire le journal encore en mémoire — celui du profil
+  // précédent — dans les clés du profil qu'on vient de sélectionner.
+  const persisted = loadedProfile === profileId;
+  useEffect(() => { if (persisted) localStorage.setItem(profileKey(STORAGE_KEY, profileId), JSON.stringify(deaths)); }, [deaths, persisted, profileId]);
+  useEffect(() => { if (persisted) localStorage.setItem(profileKey(NOTES_KEY, profileId), JSON.stringify(notes)); }, [notes, persisted, profileId]);
+  useEffect(() => { if (persisted) localStorage.setItem(profileKey(BOSS_KILLS_KEY, profileId), JSON.stringify(bossKills)); }, [bossKills, persisted, profileId]);
 
   // ---------- statistiques dérivées ----------
   const causeCounts = useMemo(() => {
@@ -70,9 +75,13 @@ function useJournal() {
   }
 
   // ---------- import / export ----------
+  // L'export porte sur le profil courant ; le nom n'est qu'une indication, un
+  // fichier reste importable dans n'importe quel profil.
   function exportJournal() {
     const stamp = new Date().toISOString().slice(0, 10);
-    downloadJson(`ds3-journal-${stamp}.json`, { deaths, notes, bossKills });
+    downloadJson(`ds3-journal-${profileSlug(profile.name)}-${stamp}.json`, {
+      profile: profile.name, deaths, notes, bossKills
+    });
     return { deaths: deaths.length, notes: notes.length };
   }
 

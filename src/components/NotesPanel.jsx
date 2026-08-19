@@ -19,11 +19,11 @@ function NoteEditor({ note, onSave, onCancel }) {
         <button
           onClick={() => onSave({ label: migrateNoteLabel(label.trim()), content: content.trim() })}
           className="bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase px-4 py-2 hover:bg-[#d4302f]"
-        >{t('saveNote')}</button>
+        >{t('save')}</button>
         <button
           onClick={onCancel}
           className="border border-[#332c20] text-[#746c5c] font-display text-[11px] tracking-[0.1em] uppercase px-4 hover:border-[#9c1c1c] hover:text-[#d4302f]"
-        >{t('cancelEdit')}</button>
+        >{t('cancel')}</button>
       </div>
     </div>
   );
