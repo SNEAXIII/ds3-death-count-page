@@ -18,6 +18,18 @@ const STRINGS = {
     title: 'Dark Souls III — Death journal',
     languageLabel: 'Language',
 
+    profileSection: 'Profile',
+    profileNamePlaceholder: 'Profile name',
+    newProfile: 'New',
+    renameProfile: 'Rename',
+    deleteProfile: 'Delete',
+    deleteProfileArmed: 'Confirm deletion',
+    deleteProfileHint: "Click again to confirm — this profile's journal is lost for good.",
+    lastProfileTitle: 'The last profile cannot be deleted.',
+    defaultProfileName: n => `Profile ${n}`,
+    save: 'Save',
+    cancel: 'Cancel',
+
     deathsRecorded: 'Deaths recorded',
 
     bossSection: 'Bosses felled',
@@ -45,8 +57,6 @@ const STRINGS = {
     allNotes: 'All notes',
     notesEmptyFiltered: 'No note with this label.',
     notesEmpty: 'No note yet. Doors, shortcuts, ideas: it all goes here.',
-    saveNote: 'Save',
-    cancelEdit: 'Cancel',
     editNote: 'Edit',
     defaultNoteLabel: 'Note',
 
@@ -72,6 +82,18 @@ const STRINGS = {
     tagline: 'Lothric se souvient',
     title: 'Dark Souls III — Journal des trépas',
     languageLabel: 'Langue',
+
+    profileSection: 'Profil',
+    profileNamePlaceholder: 'Nom du profil',
+    newProfile: 'Nouveau',
+    renameProfile: 'Renommer',
+    deleteProfile: 'Supprimer',
+    deleteProfileArmed: 'Confirmer la suppression',
+    deleteProfileHint: 'Clique à nouveau pour confirmer — le journal de ce profil sera définitivement perdu.',
+    lastProfileTitle: 'Le dernier profil ne peut pas être supprimé.',
+    defaultProfileName: n => `Profil ${n}`,
+    save: 'Enregistrer',
+    cancel: 'Annuler',
 
     deathsRecorded: 'Morts enregistrées',
 
@@ -100,8 +122,6 @@ const STRINGS = {
     allNotes: 'Toutes les notes',
     notesEmptyFiltered: 'Aucune note avec ce label.',
     notesEmpty: "Aucune note pour l'instant. Portes, raccourcis, idées : tout se note ici.",
-    saveNote: 'Enregistrer',
-    cancelEdit: 'Annuler',
     editNote: 'Éditer',
     defaultNoteLabel: 'Note',
 

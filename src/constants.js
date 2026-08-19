@@ -1,7 +1,12 @@
-// Clés de persistance (localStorage).
+// Clés de persistance (localStorage). Les trois clés de journal sont suffixées
+// par l'identifiant du profil auquel elles appartiennent (voir profiles.js).
 const STORAGE_KEY = 'ds3-deaths-log';
 const NOTES_KEY = 'ds3-notes-log';
 const BOSS_KILLS_KEY = 'ds3-boss-kills';
+const JOURNAL_KEYS = [STORAGE_KEY, NOTES_KEY, BOSS_KILLS_KEY];
+
+const PROFILES_KEY = 'ds3-profiles';
+const ACTIVE_PROFILE_KEY = 'ds3-active-profile';
 const LANG_KEY = 'ds3-lang';
 
 // Les entrées ci-dessous portent un `id` stable, indépendant de la langue :

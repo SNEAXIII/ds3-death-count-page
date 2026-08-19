@@ -1,9 +1,11 @@
 # Dark Souls III — Journal des trépas
 
 Compteur de morts, suivi des boss et notes de voyage pour Dark Souls III.
-Interface bilingue **anglais / français**, en anglais par défaut, avec un
-sélecteur EN/FR sous le titre. Tout est stocké en local dans le navigateur
-(`localStorage`), avec export / import JSON pour changer de machine.
+Autant de **profils** que de parties en cours — un profil par personnage,
+chacun avec son propre journal. Interface bilingue **anglais / français**, en
+anglais par défaut, avec un sélecteur EN/FR sous le titre. Tout est stocké en
+local dans le navigateur (`localStorage`), avec export / import JSON pour
+changer de machine.
 
 ## Déploiement
 
@@ -23,6 +25,19 @@ suffit :
 python3 -m http.server 8000
 # puis http://localhost:8000
 ```
+
+## Profils
+
+Chaque profil correspond à une partie, donc à un personnage : morts, notes et
+kills de boss lui sont propres. Les trois clés de journal sont suffixées par
+l'identifiant du profil (`ds3-deaths-log:<id>`, …), la liste des profils et le
+profil courant vivant dans `ds3-profiles` et `ds3-active-profile`. Le journal
+unique d'avant les profils devient automatiquement le premier profil.
+
+L'export et l'import portent sur le **profil courant** : le fichier reprend son
+nom, à titre indicatif, et reste importable dans n'importe quel autre profil.
+Le dernier profil n'est pas supprimable — pour repartir de zéro sans perdre le
+personnage, « Effacer le journal » est là pour ça.
 
 ## Langues et données stockées
 
@@ -50,11 +65,14 @@ src/constants.js            clés localStorage, boss, causes, labels de notes (i
 src/react-globals.js        déstructuration unique des hooks React
 src/i18n.js                 textes d'interface EN/FR, contexte de langue
 src/journal-entries.js      format des sources de mort, affichage et reprise des anciens journaux
+src/profiles.js             clés de stockage par profil, reprise du journal d'avant les profils
 src/hooks/useLanguage.js    langue courante, persistance, fonction t()
-src/hooks/useJournal.js     état du journal : persistance, mutations, stats dérivées, import/export
+src/hooks/useProfiles.js    liste des profils, profil actif, création / renommage / suppression
+src/hooks/useJournal.js     journal du profil actif : persistance, mutations, stats dérivées, import/export
 src/hooks/useFlash.js       message plein écran éphémère
 src/components/             primitives (SectionLabel, ThemedSelect, AutocompleteInput,
-                            LanguageToggle) et une section par bloc de la page
+                            LanguageToggle) et une section par bloc de la page,
+                            dont ProfileBar (sélection et gestion des profils)
 src/App.jsx                 composition des sections
 src/main.jsx                montage React
 ```
