@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dark Souls III — Journal des trépas</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<style>
+  html, body { margin: 0; padding: 0; background: #0b0a08; }
+  .font-display { font-family: 'Cinzel', serif; }
+  .font-body { font-family: 'EB Garamond', Georgia, serif; }
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-thumb { background: #332c20; }
+  @keyframes ds3-die {
+    0% { opacity: 0; letter-spacing: 0.5em; }
+    18% { opacity: 1; letter-spacing: 0.15em; }
+    75% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/jsx-source" id="app-source">
+const { useState, useEffect, useRef, useMemo } = React;
+
+// ---------- constants ----------
+const STORAGE_KEY = 'ds3-deaths-log';
+const NOTES_KEY = 'ds3-notes-log';
+const BOSS_KILLS_KEY = 'ds3-boss-kills';
+
+const QUICK_CAUSES = ['Chute', 'Embuscade', 'Piège', 'Environnement', 'Invasion PvP', 'Ami (griefing)'];
+const NOTE_LABELS = ['Porte', 'Raccourci', 'Objet', 'PNJ', 'Piège', 'Idée / stratégie'];
+
+const BOSS_GROUPS = {
+  'Jeu de base': [
+    'Iudex Gundyr', 'Vordt de la Vallée Boréale', "Le Grand Bois putréfié",
+    'Sage de Cristal', 'Diacres des Profondeurs', "Guetteurs de l'Abîme",
+    'Wolnir le Grand Immonde', 'Vieux Roi Démon', 'Pontife Sulyvahn',
+    'Yhorm le Géant', 'Aldrich Dévoreur de Dieux', 'Danseuse de la Vallée Boréale',
+    'Oceiros le Roi Consumé', 'Champion Gundyr', 'Ancienne Vouivre',
+    'Armure Pourfendeuse de Dragons', 'Lorian & Lothric', 'Princes Jumeaux',
+    'Âme de Cendre', 'Roi sans Nom'
+  ],
+  "Cendres d'Ariandel": [
+    'Sœur Friede & Père Ariandel', 'Gardienne du Champion & Grand Loup Gardien'
+  ],
+  'La Cité Annelée': [
+    "Demi-Lumière, Lance de l'Église", 'Chevalier Esclave Gael',
+    'Darkeater Midir', 'Prince Démon'
+  ]
+};
+const ALL_BOSSES = Object.values(BOSS_GROUPS).flat();
+const BOSS_PREFIX = 'Boss : ';
+const CREATURE_PREFIX = 'Créature : ';
+
+// ---------- helpers ----------
+function uid() {
+  return Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' +
+         d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ---------- small components ----------
+function SectionLabel({ children }) {
+  return (
+    <div className="font-display text-[12px] tracking-[0.22em] uppercase text-[#d4af5a] flex items-center gap-2.5 mb-3 mt-2">
+      <span>{children}</span>
+      <span className="flex-1 h-px bg-gradient-to-r from-[#332c20] to-transparent" />
+    </div>
+  );
+}
+
+function ThemedSelect({ value, onChange, children }) {
+  return (
+    <div className="relative flex-1">
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full appearance-none bg-[#16130f] border border-[#332c20] text-[#b8ae98] font-body text-[17px] px-3.5 py-2.5 pr-8 outline-none focus:border-[#a9852f] cursor-pointer"
+      >
+        {children}
+      </select>
+      <span className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-[#a9852f] text-[10px]">▼</span>
+    </div>
+  );
+}
+
+function AutocompleteInput({ value, onChange, options, placeholder, onSubmit }) {
+  const [open, setOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const inputRef = useRef(null);
+
+  const query = value.trim().toLowerCase();
+  const matches = (query ? options.filter(o => o.toLowerCase().includes(query)) : options).slice(0, 8);
+
+  function handleKeyDown(e) {
+    if (open && matches.length > 0 && e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(i => Math.min(i + 1, matches.length - 1));
+    } else if (open && matches.length > 0 && e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(i => Math.max(i - 1, 0));
+    } else if (open && e.key === 'Escape') {
+      setOpen(false);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (open && activeIndex >= 0 && matches[activeIndex]) {
+        onChange(matches[activeIndex]);
+        setOpen(false);
+        setActiveIndex(-1);
+      } else {
+        setOpen(false);
+        onSubmit();
+      }
+    }
+  }
+
+  return (
+    <div className="relative flex-1">
+      <input
+        ref={inputRef}
+        type="text"
+        autoComplete="off"
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); setActiveIndex(-1); }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onKeyDown={handleKeyDown}
+        placeholder={placeholder}
+        className="w-full bg-[#16130f] border border-[#332c20] text-[#b8ae98] font-body text-[17px] px-3.5 py-2.5 outline-none focus:border-[#a9852f] placeholder:text-[#746c5c] placeholder:italic"
+      />
+      {open && matches.length > 0 && (
+        <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-[#1d1911] border border-[#a9852f] max-h-[220px] overflow-y-auto z-50">
+          {matches.map((m, i) => (
+            <div
+              key={m}
+              onMouseDown={(e) => { e.preventDefault(); onChange(m); setOpen(false); inputRef.current && inputRef.current.focus(); }}
+              className={
+                "px-3.5 py-2.5 font-body text-[15px] cursor-pointer border-b border-[#332c20] last:border-b-0 " +
+                (i === activeIndex ? "bg-[#9c1c1c] text-[#eee2c8]" : "text-[#b8ae98] hover:bg-[#9c1c1c] hover:text-[#eee2c8]")
+              }
+            >
+              {m}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---------- app ----------
+function App() {
+  const [deaths, setDeaths] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [bossKills, setBossKills] = useState({});
+  const [loaded, setLoaded] = useState(false);
+
+  const [flash, setFlash] = useState(null);
+
+  const [bossChoice, setBossChoice] = useState(ALL_BOSSES[0]);
+  const [creatureVal, setCreatureVal] = useState('');
+  const [customVal, setCustomVal] = useState('');
+
+  const [noteLabel, setNoteLabel] = useState(NOTE_LABELS[0]);
+  const [noteCustomLabel, setNoteCustomLabel] = useState('');
+  const [noteContent, setNoteContent] = useState('');
+  const [notesFilter, setNotesFilter] = useState('');
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editLabel, setEditLabel] = useState('');
+  const [editContent, setEditContent] = useState('');
+
+  const [resetArmed, setResetArmed] = useState(false);
+  const [ioStatus, setIoStatus] = useState(null);
+
+  const fileInputRef = useRef(null);
+  const resetTimeoutRef = useRef(null);
+  const ioTimeoutRef = useRef(null);
+
+  // load once
+  useEffect(() => {
+    try {
+      const d = localStorage.getItem(STORAGE_KEY);
+      if (d) setDeaths(JSON.parse(d));
+    } catch (e) {}
+    try {
+      const n = localStorage.getItem(NOTES_KEY);
+      if (n) setNotes(JSON.parse(n));
+    } catch (e) {}
+    try {
+      const b = localStorage.getItem(BOSS_KILLS_KEY);
+      if (b) setBossKills(JSON.parse(b));
+    } catch (e) {}
+    setLoaded(true);
+  }, []);
+
+  // persist
+  useEffect(() => { if (loaded) localStorage.setItem(STORAGE_KEY, JSON.stringify(deaths)); }, [deaths, loaded]);
+  useEffect(() => { if (loaded) localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); }, [notes, loaded]);
+  useEffect(() => { if (loaded) localStorage.setItem(BOSS_KILLS_KEY, JSON.stringify(bossKills)); }, [bossKills, loaded]);
+
+  // derived
+  const causeCounts = useMemo(() => {
+    const c = {};
+    deaths.forEach(d => { c[d.source] = (c[d.source] || 0) + 1; });
+    return c;
+  }, [deaths]);
+
+  const bossDeathCounts = useMemo(() => {
+    const c = {};
+    deaths.forEach(d => {
+      if (d.source.startsWith(BOSS_PREFIX)) {
+        const name = d.source.slice(BOSS_PREFIX.length);
+        c[name] = (c[name] || 0) + 1;
+      }
+    });
+    return c;
+  }, [deaths]);
+
+  const knownCustomCauses = useMemo(() => Array.from(new Set(
+    deaths.map(d => d.source).filter(s => !QUICK_CAUSES.includes(s) && !s.startsWith(BOSS_PREFIX) && !s.startsWith(CREATURE_PREFIX))
+  )).sort((a, b) => a.localeCompare(b, 'fr')), [deaths]);
+
+  const knownCreatures = useMemo(() => Array.from(new Set(
+    deaths.filter(d => d.source.startsWith(CREATURE_PREFIX)).map(d => d.source.slice(CREATURE_PREFIX.length))
+  )).sort((a, b) => a.localeCompare(b, 'fr')), [deaths]);
+
+  const sortedCauses = useMemo(() => Object.entries(causeCounts).sort((a, b) => b[1] - a[1]), [causeCounts]);
+  const maxCauseCount = sortedCauses.length ? sortedCauses[0][1] : 1;
+
+  const noteLabelSet = useMemo(() => Array.from(new Set(notes.map(n => n.label))).sort(), [notes]);
+  const visibleNotes = notesFilter ? notes.filter(n => n.label === notesFilter) : notes;
+
+  const defeatedCount = ALL_BOSSES.filter(n => (bossKills[n] || 0) > 0).length;
+  const totalKills = ALL_BOSSES.reduce((s, n) => s + (bossKills[n] || 0), 0);
+
+  // actions
+  function playFlash(msg, kind) {
+    setFlash({ msg, kind, key: Date.now() });
+  }
+
+  function addDeath(source) {
+    setDeaths(prev => [{ id: uid(), source, ts: Date.now() }, ...prev]);
+    playFlash('VOUS ÊTES MORT', 'death');
+  }
+
+  function removeDeath(id) {
+    setDeaths(prev => prev.filter(d => d.id !== id));
+  }
+
+  function adjustBossKill(name, dir) {
+    setBossKills(prev => {
+      const next = { ...prev };
+      next[name] = Math.max(0, (prev[name] || 0) + dir);
+      return next;
+    });
+    if (dir > 0) playFlash('BOSS VAINCU', 'victory');
+  }
+
+  function submitCreature() {
+    const val = creatureVal.trim();
+    if (!val) return;
+    addDeath(CREATURE_PREFIX + val);
+    setCreatureVal('');
+  }
+
+  function submitCustom() {
+    const val = customVal.trim();
+    if (!val) return;
+    addDeath(val);
+    setCustomVal('');
+  }
+
+  function addNote() {
+    const content = noteContent.trim();
+    if (!content) return;
+    const label = noteCustomLabel.trim() || noteLabel || 'Note';
+    setNotes(prev => [{ id: uid(), label, content, ts: Date.now() }, ...prev]);
+    setNoteContent('');
+  }
+
+  function removeNote(id) {
+    setNotes(prev => prev.filter(n => n.id !== id));
+  }
+
+  function startEdit(n) {
+    setEditingNoteId(n.id);
+    setEditLabel(n.label);
+    setEditContent(n.content);
+  }
+
+  function saveEdit() {
+    setNotes(prev => prev.map(n => n.id === editingNoteId
+      ? { ...n, label: editLabel.trim() || n.label, content: editContent.trim() || n.content }
+      : n
+    ));
+    setEditingNoteId(null);
+  }
+
+  function showIoStatus(msg, kind) {
+    setIoStatus({ msg, kind });
+    clearTimeout(ioTimeoutRef.current);
+    ioTimeoutRef.current = setTimeout(() => setIoStatus(null), 5000);
+  }
+
+  function handleExport() {
+    const payload = JSON.stringify({ deaths, notes, bossKills }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `ds3-journal-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showIoStatus(`${deaths.length} mort(s) et ${notes.length} note(s) exportées.`, 'ok');
+  }
+
+  function handleImportFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(reader.result);
+        const importedDeaths = Array.isArray(parsed) ? parsed : Array.isArray(parsed.deaths) ? parsed.deaths : [];
+        const importedNotes = Array.isArray(parsed && parsed.notes) ? parsed.notes : [];
+        const importedBossKills = (parsed && typeof parsed.bossKills === 'object' && parsed.bossKills && !Array.isArray(parsed.bossKills)) ? parsed.bossKills : {};
+
+        if (importedDeaths.length === 0 && importedNotes.length === 0 && Object.keys(importedBossKills).length === 0) {
+          throw new Error('format invalide');
+        }
+
+        let addedDeaths = 0;
+        setDeaths(prev => {
+          const existingIds = new Set(prev.map(d => d.id));
+          const merged = [...prev];
+          importedDeaths.forEach(entry => {
+            if (!entry || typeof entry.source !== 'string') return;
+            const id = (typeof entry.id === 'string' && !existingIds.has(entry.id)) ? entry.id : uid();
+            const ts = typeof entry.ts === 'number' ? entry.ts : Date.now();
+            merged.push({ id, source: entry.source, ts });
+            existingIds.add(id);
+            addedDeaths++;
+          });
+          merged.sort((a, b) => b.ts - a.ts);
+          return merged;
+        });
+
+        let addedNotes = 0;
+        setNotes(prev => {
+          const existingIds = new Set(prev.map(n => n.id));
+          const merged = [...prev];
+          importedNotes.forEach(entry => {
+            if (!entry || typeof entry.content !== 'string') return;
+            const id = (typeof entry.id === 'string' && !existingIds.has(entry.id)) ? entry.id : uid();
+            const ts = typeof entry.ts === 'number' ? entry.ts : Date.now();
+            const label = typeof entry.label === 'string' && entry.label ? entry.label : 'Note';
+            merged.push({ id, label, content: entry.content, ts });
+            existingIds.add(id);
+            addedNotes++;
+          });
+          merged.sort((a, b) => b.ts - a.ts);
+          return merged;
+        });
+
+        setBossKills(prev => {
+          const next = { ...prev };
+          Object.entries(importedBossKills).forEach(([name, count]) => {
+            if (typeof count !== 'number' || count < 0) return;
+            next[name] = Math.max(next[name] || 0, count);
+          });
+          return next;
+        });
+
+        showIoStatus(`${addedDeaths} mort(s) et ${addedNotes} note(s) importées et fusionnées.`, 'ok');
+      } catch (err) {
+        showIoStatus("Échec de l'import : fichier JSON invalide.", 'err');
+      } finally {
+        e.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function handleResetClick() {
+    if (!resetArmed) {
+      setResetArmed(true);
+      clearTimeout(resetTimeoutRef.current);
+      resetTimeoutRef.current = setTimeout(() => setResetArmed(false), 4000);
+      return;
+    }
+    clearTimeout(resetTimeoutRef.current);
+    setResetArmed(false);
+    setDeaths([]);
+  }
+
+  return (
+    <div
+      className="min-h-screen bg-[#0b0a08] text-[#b8ae98] font-body px-6 pt-10 pb-16 relative"
+      style={{ backgroundImage: "radial-gradient(ellipse at 50% -10%, rgba(156,28,28,0.10), transparent 60%)" }}
+    >
+      <div className="text-center tracking-[0.35em] text-[12px] text-[#a9852f] uppercase mb-1.5 opacity-85">Lothric se souvient</div>
+      <div className="font-display text-center text-[15px] tracking-[0.18em] text-[#746c5c] uppercase mb-7">Dark Souls III — Journal des trépas</div>
+
+      <div className="max-w-[900px] mx-auto">
+
+        {/* death counter */}
+        <div className="text-center border-t border-b border-[#332c20] py-5 mb-9">
+          <div className="font-display font-black text-[76px] leading-none text-[#d4302f] [text-shadow:0_0_24px_rgba(212,48,47,0.35)]">{deaths.length}</div>
+          <div className="font-display text-[13px] tracking-[0.3em] uppercase text-[#746c5c] mt-1.5">Morts enregistrées</div>
+        </div>
+
+        {/* boss tracker */}
+        <SectionLabel>Boss vaincus</SectionLabel>
+        <div className="flex gap-8 justify-center border-t border-b border-[#332c20] py-4 mb-4">
+          <div className="text-center">
+            <span className="font-display font-bold text-[32px] text-[#d4af5a]">{defeatedCount}</span>
+            <span className="text-[#746c5c] text-[20px] mx-1">/</span>
+            <span className="font-display text-[20px] text-[#746c5c]">{ALL_BOSSES.length}</span>
+            <div className="font-display text-[10.5px] tracking-[0.15em] uppercase text-[#746c5c] mt-1">Boss vaincus</div>
+          </div>
+          <div className="text-center">
+            <span className="font-display font-bold text-[32px] text-[#d4af5a]">{totalKills}</span>
+            <div className="font-display text-[10.5px] tracking-[0.15em] uppercase text-[#746c5c] mt-1">Kills au total</div>
+          </div>
+        </div>
+
+        <div className="mb-9">
+          {Object.entries(BOSS_GROUPS).map(([group, bosses]) => (
+            <div key={group}>
+              <div className="font-display text-[11px] tracking-[0.12em] uppercase text-[#746c5c] mt-4 mb-2">{group}</div>
+              {bosses.map(name => {
+                const count = bossKills[name] || 0;
+                const deathCount = bossDeathCounts[name] || 0;
+                return (
+                  <div key={name} className="grid grid-cols-[20px_1fr_auto_auto_auto] items-center gap-2.5 py-2 px-1 border-b border-[#332c20] last:border-b-0">
+                    <span className="text-[#d4af5a] text-[15px] text-center">{count > 0 ? '✓' : ''}</span>
+                    <span className={"text-[15px] " + (count > 0 ? "text-[#d4af5a]" : "text-[#b8ae98]")}>{name}</span>
+                    <span className="text-[12.5px] text-[#d4302f] opacity-85 min-w-[46px] text-right tabular-nums">
+                      {deathCount > 0 ? `${deathCount} ${deathCount === 1 ? 'mort' : 'morts'}` : '—'}
+                    </span>
+                    <span className={"text-[13.5px] min-w-[54px] text-right tabular-nums " + (count > 0 ? "text-[#d4af5a]" : "text-[#746c5c]")}>
+                      {count} {count === 1 ? 'kill' : 'kills'}
+                    </span>
+                    <span className="flex gap-1.5">
+                      <button
+                        disabled={count === 0}
+                        onClick={() => adjustBossKill(name, -1)}
+                        className={
+                          "w-[26px] h-[26px] font-display text-[12px] border border-[#332c20] bg-[#16130f] text-[#b8ae98] " +
+                          (count === 0 ? "opacity-35 cursor-default" : "cursor-pointer hover:border-[#9c1c1c] hover:text-[#d4302f]")
+                        }
+                      >−</button>
+                      <button
+                        onClick={() => adjustBossKill(name, 1)}
+                        className="w-[26px] h-[26px] font-display text-[12px] border border-[#332c20] bg-[#16130f] text-[#b8ae98] cursor-pointer hover:border-[#a9852f] hover:text-[#d4af5a]"
+                      >+</button>
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+
+        {/* cause of death */}
+        <SectionLabel>Cause de la mort</SectionLabel>
+        <div className="grid grid-cols-3 gap-2.5 mb-3.5">
+          {QUICK_CAUSES.map(cause => {
+            const n = causeCounts[cause] || 0;
+            return (
+              <button
+                key={cause}
+                onClick={() => addDeath(cause)}
+                className="flex flex-col items-center gap-0.5 bg-[#16130f] border border-[#332c20] text-[#b8ae98] font-body text-[17px] py-3.5 px-2 hover:border-[#9c1c1c] hover:bg-[#1d1911] active:scale-[0.97] transition"
+              >
+                <span>{cause}</span>
+                <span className="font-display text-[11px] text-[#d4302f] opacity-80 min-h-[13px]">
+                  {n > 0 ? `${n} ${n > 1 ? 'morts' : 'mort'}` : ''}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-2 mb-8">
+          <ThemedSelect value={bossChoice} onChange={(e) => setBossChoice(e.target.value)}>
+            {Object.entries(BOSS_GROUPS).map(([group, bosses]) => (
+              <optgroup key={group} label={group}>
+                {bosses.map(name => <option key={name} value={name}>{name}</option>)}
+              </optgroup>
+            ))}
+          </ThemedSelect>
+          <button
+            onClick={() => addDeath(BOSS_PREFIX + bossChoice)}
+            className="bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase px-5 hover:bg-[#d4302f]"
+          >Boss</button>
+        </div>
+
+        <div className="flex gap-2 mb-8">
+          <AutocompleteInput
+            value={creatureVal}
+            onChange={setCreatureVal}
+            options={knownCreatures}
+            placeholder="Nom de la créature (ex: Chevalier noir, Loup affamé)"
+            onSubmit={submitCreature}
+          />
+          <button
+            onClick={submitCreature}
+            className="bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase px-5 hover:bg-[#d4302f]"
+          >Créature</button>
+        </div>
+
+        <div className="flex gap-2 mb-8">
+          <AutocompleteInput
+            value={customVal}
+            onChange={setCustomVal}
+            options={knownCustomCauses}
+            placeholder="Autre cause…"
+            onSubmit={submitCustom}
+          />
+          <button
+            onClick={submitCustom}
+            className="bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase px-5 hover:bg-[#d4302f]"
+          >Consigner</button>
+        </div>
+
+        {/* breakdown */}
+        <SectionLabel>Répartition</SectionLabel>
+        <div className="mb-8">
+          {sortedCauses.length === 0 ? (
+            <div className="text-[#746c5c] italic text-[16px] py-2 pb-5">Aucune mort consignée pour l'instant. Le voyage commence.</div>
+          ) : sortedCauses.map(([source, count]) => {
+            const pct = Math.max(6, Math.round((count / maxCauseCount) * 100));
+            return (
+              <div key={source} className="grid grid-cols-[280px_1fr_40px] items-center gap-3.5 mb-2.5 text-[16px]">
+                <div className="text-[#b8ae98] whitespace-nowrap overflow-hidden text-ellipsis" title={source}>{source}</div>
+                <div className="bg-[#16130f] h-2 border border-[#332c20] relative">
+                  <div className="h-full bg-gradient-to-r from-[#9c1c1c] to-[#a9852f]" style={{ width: pct + '%' }} />
+                </div>
+                <div className="text-[#746c5c] text-right tabular-nums">{count}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* notes */}
+        <SectionLabel>Notes de voyage</SectionLabel>
+        <div className="grid grid-cols-3 gap-2.5 mb-3.5">
+          {NOTE_LABELS.map(label => (
+            <button
+              key={label}
+              onClick={() => { setNoteLabel(label); setNoteCustomLabel(''); }}
+              className={
+                "bg-[#16130f] border text-[15px] py-3.5 px-2 hover:border-[#a9852f] hover:bg-[#1d1911] active:scale-[0.97] transition " +
+                (noteLabel === label && !noteCustomLabel.trim() ? "border-[#a9852f] bg-[#1d1911] text-[#d4af5a]" : "border-[#332c20] text-[#b8ae98]")
+              }
+            >{label}</button>
+          ))}
+        </div>
+        <div className="flex gap-2 mb-3">
+          <input
+            value={noteCustomLabel}
+            onChange={(e) => setNoteCustomLabel(e.target.value)}
+            type="text"
+            placeholder="Label personnalisé (ex: Ascenseur, Marchand)"
+            className="flex-1 bg-[#16130f] border border-[#332c20] text-[#b8ae98] font-body text-[17px] px-3.5 py-2.5 outline-none focus:border-[#a9852f] placeholder:italic placeholder:text-[#746c5c]"
+          />
+        </div>
+        <div className="mb-3">
+          <textarea
+            value={noteContent}
+            onChange={(e) => setNoteContent(e.target.value)}
+            placeholder="Ex: Porte verrouillée depuis l'intérieur, s'ouvre après le boss de la zone."
+            className="w-full min-h-[70px] bg-[#16130f] border border-[#332c20] text-[#b8ae98] font-body text-[17px] px-3.5 py-2.5 outline-none focus:border-[#a9852f] mb-2 resize-y placeholder:italic placeholder:text-[#746c5c]"
+          />
+          <button
+            onClick={addNote}
+            className="w-full bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase py-2.5 hover:bg-[#d4302f]"
+          >Ajouter la note</button>
+        </div>
+
+        <div className="mb-3.5">
+          <ThemedSelect value={notesFilter} onChange={(e) => setNotesFilter(e.target.value)}>
+            <option value="">Toutes les notes</option>
+            {noteLabelSet.map(l => <option key={l} value={l}>{l}</option>)}
+          </ThemedSelect>
+        </div>
+
+        <div className="mb-8">
+          {visibleNotes.length === 0 ? (
+            <div className="text-[#746c5c] italic text-[16px] py-2 pb-5">
+              {notesFilter ? 'Aucune note avec ce label.' : "Aucune note pour l'instant. Portes, raccourcis, idées : tout se note ici."}
+            </div>
+          ) : visibleNotes.map(n => (
+            editingNoteId === n.id ? (
+              <div key={n.id} className="border border-[#332c20] bg-[#16130f] p-3.5 mb-2 flex flex-col gap-2">
+                <input
+                  value={editLabel}
+                  onChange={(e) => setEditLabel(e.target.value)}
+                  className="bg-[#16130f] border border-[#332c20] text-[#b8ae98] text-[14px] px-3 py-2 outline-none focus:border-[#a9852f]"
+                />
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  className="min-h-[60px] bg-[#16130f] border border-[#332c20] text-[#b8ae98] text-[17px] px-3.5 py-2.5 outline-none focus:border-[#a9852f] resize-y"
+                />
+                <div className="flex gap-2">
+                  <button onClick={saveEdit} className="bg-[#9c1c1c] border border-[#d4302f] text-[#eee2c8] font-display text-[12px] tracking-[0.12em] uppercase px-4 py-2 hover:bg-[#d4302f]">Enregistrer</button>
+                  <button onClick={() => setEditingNoteId(null)} className="border border-[#332c20] text-[#746c5c] font-display text-[11px] tracking-[0.1em] uppercase px-4 hover:border-[#9c1c1c] hover:text-[#d4302f]">Annuler</button>
+                </div>
+              </div>
+            ) : (
+              <div key={n.id} className="border border-[#332c20] bg-[#16130f] p-3.5 mb-2">
+                <div className="flex justify-between items-center mb-1.5">
+                  <span className="font-display text-[10.5px] tracking-[0.1em] uppercase text-[#d4af5a] border border-[#a9852f] px-2 py-0.5 inline-block">{n.label}</span>
+                  <span className="text-[#746c5c] text-[12px]">{formatTime(n.ts)}</span>
+                </div>
+                <div className="text-[17px] text-[#b8ae98] leading-snug mb-1.5 whitespace-pre-wrap">{n.content}</div>
+                <div className="flex items-center gap-3">
+                  <button onClick={() => startEdit(n)} title="Éditer" aria-label="Éditer" className="text-[#746c5c] text-[14px] opacity-70 hover:text-[#d4af5a] hover:opacity-100">✎</button>
+                  <button onClick={() => removeNote(n.id)} className="text-[#746c5c] text-[12.5px] underline opacity-60 hover:text-[#d4302f] hover:opacity-100">retirer</button>
+                </div>
+              </div>
+            )
+          ))}
+        </div>
+
+        {/* history */}
+        <SectionLabel>Historique récent</SectionLabel>
+        <div className="mb-8">
+          {deaths.length === 0 ? (
+            <div className="text-[#746c5c] italic text-[16px] py-2 pb-5">L'historique est vide.</div>
+          ) : deaths.slice(0, 25).map(d => (
+            <div key={d.id} className="flex justify-between items-center py-2 px-1 border-b border-[#332c20] last:border-b-0 text-[16px]">
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-[#b8ae98]">{d.source}</span>
+                <span className="text-[#746c5c] text-[12.5px]">{formatTime(d.ts)}</span>
+              </div>
+              <button onClick={() => removeDeath(d.id)} className="text-[#746c5c] text-[13px] underline opacity-60 hover:text-[#d4302f] hover:opacity-100">retirer</button>
+            </div>
+          ))}
+        </div>
+
+        {/* import / export */}
+        <div className="flex gap-2.5 justify-center mt-6">
+          <button onClick={handleExport} className="bg-[#16130f] border border-[#332c20] text-[#d4af5a] font-display text-[11px] tracking-[0.13em] uppercase py-2 px-4 hover:border-[#a9852f] hover:bg-[#1d1911]">Exporter (JSON)</button>
+          <button onClick={() => fileInputRef.current && fileInputRef.current.click()} className="bg-[#16130f] border border-[#332c20] text-[#d4af5a] font-display text-[11px] tracking-[0.13em] uppercase py-2 px-4 hover:border-[#a9852f] hover:bg-[#1d1911]">Importer (JSON)</button>
+          <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={handleImportFile} />
+        </div>
+        <div className={
+          "text-center text-[12.5px] mt-2 min-h-[16px] " +
+          (ioStatus && ioStatus.kind === 'ok' ? "text-[#d4af5a] not-italic" :
+           ioStatus && ioStatus.kind === 'err' ? "text-[#d4302f] not-italic" : "text-[#746c5c] italic")
+        }>
+          {ioStatus ? ioStatus.msg : ''}
+        </div>
+
+        <div className="text-center mt-4">
+          <button
+            onClick={handleResetClick}
+            className={
+              "font-display text-[11px] tracking-[0.15em] uppercase py-2 px-[18px] border " +
+              (resetArmed ? "border-[#d4302f] bg-[#9c1c1c] text-[#eee2c8]" : "border-[#332c20] text-[#746c5c] hover:border-[#9c1c1c] hover:text-[#d4302f]")
+            }
+          >
+            {resetArmed ? "Confirmer l'effacement" : "Effacer le journal"}
+          </button>
+          {resetArmed && <div className="text-[12.5px] italic text-[#746c5c] mt-2">Clique à nouveau pour confirmer (irréversible)</div>}
+        </div>
+      </div>
+
+      {flash && (
+        <div key={flash.key} className="fixed inset-0 flex items-center justify-center pointer-events-none z-[999]">
+          <div
+            className={
+              "font-display font-bold text-[56px] tracking-[0.15em] animate-[ds3-die_1.6s_ease-out_forwards] " +
+              (flash.kind === 'victory'
+                ? "text-[#d4af5a] [text-shadow:0_0_30px_rgba(212,175,90,0.8),0_0_60px_rgba(212,175,90,0.4)]"
+                : "text-[#d4302f] [text-shadow:0_0_30px_rgba(212,48,47,0.8),0_0_60px_rgba(212,48,47,0.4)]")
+            }
+          >
+            {flash.msg}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+
+<script>
+  (function () {
+    var source = document.getElementById('app-source').textContent;
+    var output = Babel.transform(source, {
+      presets: [['react', { runtime: 'classic' }]]
+    }).code;
+    var script = document.createElement('script');
+    script.textContent = output;
+    document.body.appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
