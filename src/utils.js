@@ -1,12 +1,35 @@
+// Helpers génériques, sans dépendance sur les données du jeu.
+
 // Identifiant local, suffisant pour distinguer deux entrées créées dans la même ms.
 function uid() {
   return Date.now() + '-' + Math.random().toString(36).slice(2, 7);
 }
 
-function formatTime(ts) {
+const DATE_LOCALES = { en: 'en-GB', fr: 'fr-FR' };
+
+function formatTime(ts, lang) {
+  const locale = DATE_LOCALES[lang] || DATE_LOCALES.en;
   const d = new Date(ts);
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' }) + ' ' +
-         d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit' }) + ' ' +
+         d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+}
+
+function indexBy(list, getKey) {
+  const index = {};
+  list.forEach(item => { index[getKey(item)] = item; });
+  return index;
+}
+
+// Index d'une liste traduite par chacun de ses libellés, toutes langues confondues :
+// sert à reconnaître les données enregistrées avant l'introduction des identifiants.
+function indexByLabels(list) {
+  const index = {};
+  list.forEach(item => {
+    Object.keys(item).forEach(key => {
+      if (key !== 'id' && key !== 'bosses') index[item[key]] = item;
+    });
+  });
+  return index;
 }
 
 function readStored(key, fallback) {

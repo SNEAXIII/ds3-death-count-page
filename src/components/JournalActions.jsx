@@ -4,6 +4,8 @@ const RESET_ARM_TIMEOUT_MS = 4000;
 // Export / import JSON et effacement du journal.
 // `onExport` et `onImport` renvoient { deaths, notes } pour le message de confirmation.
 function JournalActions({ onExport, onImport, onReset }) {
+  const { t } = useI18n();
+
   const [status, setStatus] = useState(null);
   const [resetArmed, setResetArmed] = useState(false);
 
@@ -16,15 +18,17 @@ function JournalActions({ onExport, onImport, onReset }) {
     clearTimeout(resetTimeoutRef.current);
   }, []);
 
-  function showStatus(msg, kind) {
-    setStatus({ msg, kind });
+  // Le statut mémorise la clé de traduction et ses arguments, pour rester
+  // dans la bonne langue si elle change pendant l'affichage.
+  function showStatus(key, kind, args) {
+    setStatus({ key, kind, args: args || [] });
     clearTimeout(statusTimeoutRef.current);
     statusTimeoutRef.current = setTimeout(() => setStatus(null), STATUS_TIMEOUT_MS);
   }
 
   function handleExport() {
     const { deaths, notes } = onExport();
-    showStatus(`${deaths} mort(s) et ${notes} note(s) exportées.`, 'ok');
+    showStatus('exportDone', 'ok', [deaths, notes]);
   }
 
   function handleImportFile(e) {
@@ -35,9 +39,9 @@ function JournalActions({ onExport, onImport, onReset }) {
     reader.onload = () => {
       try {
         const { deaths, notes } = onImport(JSON.parse(reader.result));
-        showStatus(`${deaths} mort(s) et ${notes} note(s) importées et fusionnées.`, 'ok');
+        showStatus('importDone', 'ok', [deaths, notes]);
       } catch (err) {
-        showStatus("Échec de l'import : fichier JSON invalide.", 'err');
+        showStatus('importFailed', 'err');
       } finally {
         input.value = '';
       }
@@ -64,8 +68,8 @@ function JournalActions({ onExport, onImport, onReset }) {
   return (
     <>
       <div className="flex gap-2.5 justify-center mt-6">
-        <button onClick={handleExport} className={ioButtonClass}>Exporter (JSON)</button>
-        <button onClick={() => fileInputRef.current && fileInputRef.current.click()} className={ioButtonClass}>Importer (JSON)</button>
+        <button onClick={handleExport} className={ioButtonClass}>{t('exportButton')}</button>
+        <button onClick={() => fileInputRef.current && fileInputRef.current.click()} className={ioButtonClass}>{t('importButton')}</button>
         <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={handleImportFile} />
       </div>
 
@@ -74,7 +78,7 @@ function JournalActions({ onExport, onImport, onReset }) {
         (status && status.kind === 'ok' ? "text-[#d4af5a] not-italic" :
          status && status.kind === 'err' ? "text-[#d4302f] not-italic" : "text-[#746c5c] italic")
       }>
-        {status ? status.msg : ''}
+        {status ? t(status.key, ...status.args) : ''}
       </div>
 
       <div className="text-center mt-4">
@@ -85,9 +89,9 @@ function JournalActions({ onExport, onImport, onReset }) {
             (resetArmed ? "border-[#d4302f] bg-[#9c1c1c] text-[#eee2c8]" : "border-[#332c20] text-[#746c5c] hover:border-[#9c1c1c] hover:text-[#d4302f]")
           }
         >
-          {resetArmed ? "Confirmer l'effacement" : "Effacer le journal"}
+          {t(resetArmed ? 'resetArmed' : 'resetIdle')}
         </button>
-        {resetArmed && <div className="text-[12.5px] italic text-[#746c5c] mt-2">Clique à nouveau pour confirmer (irréversible)</div>}
+        {resetArmed && <div className="text-[12.5px] italic text-[#746c5c] mt-2">{t('resetHint')}</div>}
       </div>
     </>
   );

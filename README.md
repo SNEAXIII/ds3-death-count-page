@@ -1,8 +1,9 @@
 # Dark Souls III — Journal des trépas
 
 Compteur de morts, suivi des boss et notes de voyage pour Dark Souls III.
-Tout est stocké en local dans le navigateur (`localStorage`), avec export /
-import JSON pour changer de machine.
+Interface bilingue **anglais / français**, en anglais par défaut, avec un
+sélecteur EN/FR sous le titre. Tout est stocké en local dans le navigateur
+(`localStorage`), avec export / import JSON pour changer de machine.
 
 ## Déploiement
 
@@ -23,20 +24,34 @@ python3 -m http.server 8000
 # puis http://localhost:8000
 ```
 
+## Langues et données stockées
+
+Rien de traduisible n'est enregistré en clair. Une mort est une chaîne
+indépendante de la langue — `cause:fall`, `boss:vordt`,
+`creature:<nom saisi>`, ou du texte libre pour une cause personnalisée — et
+les labels de notes préréglés sont stockés par identifiant (`door`,
+`shortcut`, …). Seul l'affichage est traduit, donc changer de langue
+retraduit l'historique déjà consigné.
+
+Les journaux créés avant l'i18n (noms de boss et causes en français) sont
+convertis à la lecture, aussi bien depuis `localStorage` que depuis un
+fichier importé : rien à refaire côté joueur.
+
 ## Structure
 
 ```
 index.html                  page + ordre de chargement des scripts
 assets/styles.css           polices, scrollbar, animation du flash
-src/constants.js            clés localStorage, listes de boss, causes, labels
-src/utils.js                identifiants, dates, lecture localStorage, fusion, export fichier
+src/utils.js                helpers génériques (ids, dates, index, fusion, export fichier)
+src/constants.js            clés localStorage, boss, causes, labels de notes (id + libellés)
 src/react-globals.js        déstructuration unique des hooks React
+src/i18n.js                 textes d'interface EN/FR, contexte de langue
+src/journal-entries.js      format des sources de mort, affichage et reprise des anciens journaux
+src/hooks/useLanguage.js    langue courante, persistance, fonction t()
 src/hooks/useJournal.js     état du journal : persistance, mutations, stats dérivées, import/export
 src/hooks/useFlash.js       message plein écran éphémère
-src/components/             primitives (SectionLabel, ThemedSelect, AutocompleteInput)
-                            et sections (DeathCounter, BossTracker, DeathForm,
-                            CauseBreakdown, NotesPanel, DeathHistory,
-                            JournalActions, FlashOverlay)
+src/components/             primitives (SectionLabel, ThemedSelect, AutocompleteInput,
+                            LanguageToggle) et une section par bloc de la page
 src/App.jsx                 composition des sections
 src/main.jsx                montage React
 ```

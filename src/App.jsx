@@ -1,60 +1,67 @@
 function App() {
+  const i18n = useLanguage();
   const journal = useJournal();
   const { flash, showFlash } = useFlash();
 
   function recordDeath(source) {
     journal.addDeath(source);
-    showFlash('VOUS ÊTES MORT', 'death');
+    showFlash('death');
   }
 
-  function recordBossKill(name, dir) {
-    journal.adjustBossKill(name, dir);
-    if (dir > 0) showFlash('BOSS VAINCU', 'victory');
+  function recordBossKill(bossId, dir) {
+    journal.adjustBossKill(bossId, dir);
+    if (dir > 0) showFlash('victory');
   }
 
   return (
-    <div
-      className="min-h-screen bg-[#0b0a08] text-[#b8ae98] font-body px-6 pt-10 pb-16 relative"
-      style={{ backgroundImage: "radial-gradient(ellipse at 50% -10%, rgba(156,28,28,0.10), transparent 60%)" }}
-    >
-      <div className="text-center tracking-[0.35em] text-[12px] text-[#a9852f] uppercase mb-1.5 opacity-85">Lothric se souvient</div>
-      <div className="font-display text-center text-[15px] tracking-[0.18em] text-[#746c5c] uppercase mb-7">Dark Souls III — Journal des trépas</div>
+    <I18nContext.Provider value={i18n}>
+      <div
+        className="min-h-screen bg-[#0b0a08] text-[#b8ae98] font-body px-6 pt-10 pb-16 relative"
+        style={{ backgroundImage: "radial-gradient(ellipse at 50% -10%, rgba(156,28,28,0.10), transparent 60%)" }}
+      >
+        <div className="text-center tracking-[0.35em] text-[12px] text-[#a9852f] uppercase mb-1.5 opacity-85">{i18n.t('tagline')}</div>
+        <div className="font-display text-center text-[15px] tracking-[0.18em] text-[#746c5c] uppercase mb-4">{i18n.t('title')}</div>
 
-      <div className="max-w-[900px] mx-auto">
-        <DeathCounter count={journal.deaths.length} />
+        <div className="mb-7">
+          <LanguageToggle />
+        </div>
 
-        <BossTracker
-          bossKills={journal.bossKills}
-          bossDeathCounts={journal.bossDeathCounts}
-          onAdjust={recordBossKill}
-        />
+        <div className="max-w-[900px] mx-auto">
+          <DeathCounter count={journal.deaths.length} />
 
-        <DeathForm
-          causeCounts={journal.causeCounts}
-          knownCreatures={journal.knownCreatures}
-          knownCustomCauses={journal.knownCustomCauses}
-          onRecord={recordDeath}
-        />
+          <BossTracker
+            bossKills={journal.bossKills}
+            bossDeathCounts={journal.bossDeathCounts}
+            onAdjust={recordBossKill}
+          />
 
-        <CauseBreakdown causeCounts={journal.causeCounts} />
+          <DeathForm
+            causeCounts={journal.causeCounts}
+            knownCreatures={journal.knownCreatures}
+            knownCustomCauses={journal.knownCustomCauses}
+            onRecord={recordDeath}
+          />
 
-        <NotesPanel
-          notes={journal.notes}
-          onAdd={journal.addNote}
-          onUpdate={journal.updateNote}
-          onRemove={journal.removeNote}
-        />
+          <CauseBreakdown causeCounts={journal.causeCounts} />
 
-        <DeathHistory deaths={journal.deaths} onRemove={journal.removeDeath} />
+          <NotesPanel
+            notes={journal.notes}
+            onAdd={journal.addNote}
+            onUpdate={journal.updateNote}
+            onRemove={journal.removeNote}
+          />
 
-        <JournalActions
-          onExport={journal.exportJournal}
-          onImport={journal.importJournal}
-          onReset={journal.clearDeaths}
-        />
+          <DeathHistory deaths={journal.deaths} onRemove={journal.removeDeath} />
+
+          <JournalActions
+            onExport={journal.exportJournal}
+            onImport={journal.importJournal}
+            onReset={journal.clearDeaths}
+          />
+        </div>
+
+        <FlashOverlay flash={flash} />
       </div>
-
-      <FlashOverlay flash={flash} />
-    </div>
+    </I18nContext.Provider>
   );
 }
