@@ -2,6 +2,7 @@ function App() {
   const i18n = useLanguage();
   const profiles = useProfiles(n => i18n.t('defaultProfileName', n));
   const journal = useJournal(profiles.active);
+  const game = gameOf(profiles.active);
   const { flash, showFlash } = useFlash();
 
   function recordDeath(source) {
@@ -34,18 +35,21 @@ function App() {
             onSelect={profiles.selectProfile}
             onCreate={profiles.createProfile}
             onRename={profiles.renameProfile}
+            onSetGame={profiles.setProfileGame}
             onDelete={profiles.deleteProfile}
           />
 
           <DeathCounter count={journal.deaths.length} />
 
           <BossTracker
+            game={game}
             bossKills={journal.bossKills}
             bossDeathCounts={journal.bossDeathCounts}
             onAdjust={recordBossKill}
           />
 
           <DeathForm
+            game={game}
             causeCounts={journal.causeCounts}
             knownCreatures={journal.knownCreatures}
             knownCustomCauses={journal.knownCustomCauses}

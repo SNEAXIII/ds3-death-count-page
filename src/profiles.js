@@ -4,8 +4,8 @@ function profileKey(baseKey, profileId) {
   return baseKey + ':' + profileId;
 }
 
-function makeProfile(name) {
-  return { id: uid(), name, createdAt: Date.now() };
+function makeProfile(name, game) {
+  return { id: uid(), name, game: game || DEFAULT_GAME, createdAt: Date.now() };
 }
 
 // Charge la liste des profils. À la première visite après l'ajout des profils,

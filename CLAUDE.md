@@ -1,7 +1,7 @@
 # Instructions de travail
 
-Journal de morts Dark Souls III, publié sur GitHub Pages. Page statique, sans
-étape de build. Ce fichier fixe les règles à respecter dans ce dépôt ; le
+Journal de morts pour Dark Souls, Dark Souls II et Dark Souls III, publié sur
+GitHub Pages. Page statique, sans étape de build. Ce fichier fixe les règles à respecter dans ce dépôt ; le
 `README.md` décrit le projet côté utilisateur.
 
 ## Règle centrale : rien de caché en localStorage
@@ -28,7 +28,7 @@ Concrètement, en ajoutant un état persistant :
 | `ds3-deaths-log:<profil>` | journal | oui | oui |
 | `ds3-notes-log:<profil>` | journal | oui | oui |
 | `ds3-boss-kills:<profil>` | journal | oui | oui |
-| `ds3-profiles` | application | via « Supprimer » | **non** |
+| `ds3-profiles` (nom + jeu) | application | via « Supprimer » | nom et jeu recopiés dans l'export, non relus |
 | `ds3-active-profile` | application | via « Supprimer » | **non** |
 | `ds3-lang` | préférence | **non** | **non** |
 
@@ -52,7 +52,14 @@ d'un profil au passage, un import écraserait la langue et les profils du poste.
   ou de label, conserver l'ancien nom dans `aliases` : les journaux existants
   restent rattachés. La comparaison ignore déjà casse, accents et ponctuation
   (`labelKey`).
-- **Une donnée non reconnue est conservée**, jamais supprimée en silence.
+- **Une donnée non reconnue est conservée**, jamais supprimée en silence. Un
+  kill enregistré dans un jeu que le profil n'affiche plus reste stocké.
+- **Les identifiants de boss sont uniques tous jeux confondus** : ceux des jeux
+  ajoutés après Dark Souls III sont préfixés (`ds1-`, `ds2-`), ceux de Dark
+  Souls III restent nus pour ne pas détacher les journaux existants.
+  `BOSS_BY_LABEL`, qui ne sert qu'à rattacher les journaux d'avant les
+  identifiants, reste limité au roster Dark Souls III : l'étendre ferait entrer
+  en collision des noms partagés entre deux jeux.
 
 ## Architecture
 
@@ -69,6 +76,9 @@ JSX est transpilé dans le navigateur.
   scripts classiques.
 - Les fichiers sans JSX sont chargés en `<script src>` simple, ceux avec JSX en
   `type="text/babel" data-presets="react-classic"`.
+- Les rosters de boss vivent dans `src/bosses.js`, un bloc par jeu ; le jeu est
+  une propriété du profil, et les composants reçoivent le jeu courant plutôt
+  que de lire une liste globale.
 - L'état vit dans les hooks (`useJournal`, `useProfiles`, `useLanguage`,
   `useFlash`) ; chaque section de page détient son état local (saisies, filtres,
   édition, confirmations). `App.jsx` ne fait que composer.
@@ -99,7 +109,11 @@ python3 -m http.server 8000   # ouvrir index.html en file:// ne marche pas
 Avant de pousser, rejouer les parcours touchés avec Playwright et Chromium
 (`/opt/pw-browsers`), et **lire la console** : une erreur JS casse toute la page.
 Couvrir au minimum : saisie, rechargement, bascule de langue, changement de
-profil, export → effacement → réimport.
+profil, changement de jeu, export → effacement → réimport.
+
+Les données de jeu recopiées de mémoire (noms de boss, rosters) ne sont pas
+vérifiables depuis cet environnement, les wikis étant bloqués : le signaler
+dans la PR plutôt que de les présenter comme sûres.
 
 Depuis cet environnement, les CDN sont bloqués : servir des copies locales de
 React, Babel et Tailwind (npm) pour que la page se rende comme en production —

@@ -29,11 +29,14 @@ function BossRow({ boss, kills, deathCount, onAdjust }) {
   );
 }
 
-function BossTracker({ bossKills, bossDeathCounts, onAdjust }) {
+function BossTracker({ game, bossKills, bossDeathCounts, onAdjust }) {
   const { lang, t } = useI18n();
 
-  const defeatedCount = ALL_BOSSES.filter(boss => (bossKills[boss.id] || 0) > 0).length;
-  const totalKills = ALL_BOSSES.reduce((sum, boss) => sum + (bossKills[boss.id] || 0), 0);
+  // Le bilan ne compte que les boss du jeu affiché : les kills des autres jeux
+  // restent en mémoire, ils réapparaissent si le profil y revient.
+  const roster = bossesOf(game);
+  const defeatedCount = roster.filter(boss => (bossKills[boss.id] || 0) > 0).length;
+  const totalKills = roster.reduce((sum, boss) => sum + (bossKills[boss.id] || 0), 0);
 
   return (
     <>
@@ -43,7 +46,7 @@ function BossTracker({ bossKills, bossDeathCounts, onAdjust }) {
         <div className="text-center">
           <span className="font-display font-bold text-[32px] text-[#d4af5a]">{defeatedCount}</span>
           <span className="text-[#746c5c] text-[20px] mx-1">/</span>
-          <span className="font-display text-[20px] text-[#746c5c]">{ALL_BOSSES.length}</span>
+          <span className="font-display text-[20px] text-[#746c5c]">{roster.length}</span>
           <div className="font-display text-[10.5px] tracking-[0.15em] uppercase text-[#746c5c] mt-1">{t('bossesDefeated')}</div>
         </div>
         <div className="text-center">
@@ -53,7 +56,7 @@ function BossTracker({ bossKills, bossDeathCounts, onAdjust }) {
       </div>
 
       <div className="mb-9">
-        {BOSS_GROUPS.map(group => (
+        {game.groups.map(group => (
           <div key={group.id}>
             <div className="font-display text-[11px] tracking-[0.12em] uppercase text-[#746c5c] mt-4 mb-2">{labelOf(group, lang)}</div>
             {group.bosses.map(boss => (

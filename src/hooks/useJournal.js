@@ -83,7 +83,7 @@ function useJournal(profile) {
   function exportJournal() {
     const stamp = new Date().toISOString().slice(0, 10);
     downloadJson(`ds3-journal-${profileSlug(profile.name)}-${stamp}.json`, {
-      profile: profile.name, deaths, notes, bossKills
+      profile: profile.name, game: gameOf(profile).id, deaths, notes, bossKills
     });
     return { deaths: deaths.length, notes: notes.length, bosses: countBosses(bossKills) };
   }
