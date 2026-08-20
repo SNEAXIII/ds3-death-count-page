@@ -52,8 +52,11 @@ d'un profil au passage, un import écraserait la langue et les profils du poste.
   ou de label, conserver l'ancien nom dans `aliases` : les journaux existants
   restent rattachés. La comparaison ignore déjà casse, accents et ponctuation
   (`labelKey`).
-- **Une donnée non reconnue est conservée**, jamais supprimée en silence. Un
-  kill enregistré dans un jeu que le profil n'affiche plus reste stocké.
+- **Une donnée non reconnue est conservée**, jamais supprimée en silence.
+- **Un profil est lié à un jeu**, choisi à sa création et définitivement : un
+  profil est un personnage, donc une partie dans un jeu. Aucune statistique ne
+  traverse deux jeux, et rien dans l'interface ne permet de rattacher un profil
+  existant à un autre jeu.
 - **Les identifiants de boss sont uniques tous jeux confondus** : ceux des jeux
   ajoutés après Dark Souls III sont préfixés (`ds1-`, `ds2-`), ceux de Dark
   Souls III restent nus pour ne pas détacher les journaux existants.
@@ -77,8 +80,8 @@ JSX est transpilé dans le navigateur.
 - Les fichiers sans JSX sont chargés en `<script src>` simple, ceux avec JSX en
   `type="text/babel" data-presets="react-classic"`.
 - Les rosters de boss vivent dans `src/bosses.js`, un bloc par jeu ; le jeu est
-  une propriété du profil, et les composants reçoivent le jeu courant plutôt
-  que de lire une liste globale.
+  une propriété du profil, fixée à la création, et les composants reçoivent le
+  jeu courant plutôt que de lire une liste globale.
 - L'état vit dans les hooks (`useJournal`, `useProfiles`, `useLanguage`,
   `useFlash`) ; chaque section de page détient son état local (saisies, filtres,
   édition, confirmations). `App.jsx` ne fait que composer.
@@ -109,7 +112,7 @@ python3 -m http.server 8000   # ouvrir index.html en file:// ne marche pas
 Avant de pousser, rejouer les parcours touchés avec Playwright et Chromium
 (`/opt/pw-browsers`), et **lire la console** : une erreur JS casse toute la page.
 Couvrir au minimum : saisie, rechargement, bascule de langue, changement de
-profil, changement de jeu, export → effacement → réimport.
+profil, création d'un profil dans un autre jeu, export → effacement → réimport.
 
 Les données de jeu recopiées de mémoire (noms de boss, rosters) ne sont pas
 vérifiables depuis cet environnement, les wikis étant bloqués : le signaler
