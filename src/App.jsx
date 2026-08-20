@@ -34,8 +34,8 @@ function App() {
             active={profiles.active}
             onSelect={profiles.selectProfile}
             onCreate={profiles.createProfile}
+            nextName={profiles.nextProfileName}
             onRename={profiles.renameProfile}
-            onSetGame={profiles.setProfileGame}
             onDelete={profiles.deleteProfile}
           />
 

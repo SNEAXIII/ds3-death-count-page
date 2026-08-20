@@ -30,13 +30,11 @@ python3 -m http.server 8000
 ## Profils
 
 Chaque profil correspond à une partie, donc à un personnage : son jeu, ses
-morts, ses notes et ses kills de boss lui sont propres. Le sélecteur de jeu
-sous la liste des profils change le roster affiché — 26 boss pour Dark Souls
-(Artorias of the Abyss compris), 40 pour Dark Souls II (les trois Couronnes),
-25 pour Dark Souls III (Ariandel et la Cité Annelée). Changer le jeu d'un
-profil ne perd rien : les kills des autres jeux restent en mémoire et
-réapparaissent si le profil y revient. Un profil neuf reprend le jeu du profil
-courant. Les trois clés de journal sont suffixées par
+morts, ses notes et ses kills de boss lui sont propres. **Le jeu se choisit à la
+création du profil et n'en change plus** — un personnage appartient à un jeu, et
+ses statistiques n'auraient aucun sens rapportées à un autre. Le roster suit :
+26 boss pour Dark Souls (Artorias of the Abyss compris), 40 pour Dark Souls II
+(les trois Couronnes), 25 pour Dark Souls III (Ariandel et la Cité Annelée). Les trois clés de journal sont suffixées par
 l'identifiant du profil (`ds3-deaths-log:<id>`, …), la liste des profils et le
 profil courant vivant dans `ds3-profiles` et `ds3-active-profile`. Le journal
 unique d'avant les profils devient automatiquement le premier profil.

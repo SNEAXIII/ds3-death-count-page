@@ -11,18 +11,14 @@ function useProfiles(defaultNameFor) {
   useEffect(() => { localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles)); }, [profiles]);
   useEffect(() => { localStorage.setItem(ACTIVE_PROFILE_KEY, JSON.stringify(active.id)); }, [active.id]);
 
-  // Un profil neuf reprend le jeu du profil courant : on enchaîne plus souvent
-  // deux parties du même jeu qu'on ne change de jeu.
+  // Le jeu est fixé ici, à la création, et ne change plus : un profil est un
+  // personnage, donc une partie dans un jeu, et ses statistiques n'ont aucun
+  // sens rapportées à un autre jeu.
   function createProfile(name, game) {
-    const profile = makeProfile(name || defaultNameFor(profiles.length + 1), game || active.game);
+    const profile = makeProfile(name || nextProfileName(), game || active.game);
     setProfiles(prev => [...prev, profile]);
     setActiveId(profile.id);
     return profile;
-  }
-
-  function setProfileGame(id, game) {
-    if (!GAME_BY_ID[game]) return;
-    setProfiles(prev => prev.map(p => (p.id === id ? { ...p, game } : p)));
   }
 
   function renameProfile(id, name) {
@@ -41,5 +37,9 @@ function useProfiles(defaultNameFor) {
     deleteProfileJournal(id);
   }
 
-  return { profiles, active, selectProfile: setActiveId, createProfile, renameProfile, setProfileGame, deleteProfile };
+  function nextProfileName() {
+    return defaultNameFor(profiles.length + 1);
+  }
+
+  return { profiles, active, nextProfileName, selectProfile: setActiveId, createProfile, renameProfile, deleteProfile };
 }

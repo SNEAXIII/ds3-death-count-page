@@ -4,8 +4,8 @@ function DeathForm({ game, causeCounts, knownCreatures, knownCustomCauses, onRec
 
   const [bossId, setBossId] = useState(bossesOf(game)[0].id);
 
-  // Changer le jeu du profil laisse une sélection qui n'existe plus dans le
-  // nouveau roster : on retombe alors sur son premier boss.
+  // Passer à un profil d'un autre jeu laisse une sélection absente du nouveau
+  // roster : on retombe alors sur son premier boss.
   const roster = bossesOf(game);
   const selectedBossId = roster.some(boss => boss.id === bossId) ? bossId : roster[0].id;
   const [creatureVal, setCreatureVal] = useState('');
